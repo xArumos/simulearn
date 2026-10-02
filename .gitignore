@@ -1,0 +1,14 @@
+# Corpus archives and derived data are local-only.
+/data/raw/
+/data/processed/
+/data/experiments/
+
+# Notebook execution artifacts.
+/notebooks/*_executed.ipynb
+**/.ipynb_checkpoints/
+
+# Python artifacts.
+__pycache__/
+*.py[cod]
+.venv/
+venv/
