@@ -1,0 +1,29 @@
+# CHILDES data is CC BY-NC-SA: never commit raw or processed transcripts
+data/*
+!data/DATA_MANIFEST.md
+
+# Python / env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Model weights and checkpoints
+experiments/*/checkpoints/
+*.safetensors
+*.bin
+*.pt
+*.gguf
+
+# Generated outputs that may contain CHILDES text
+experiments/*/samples.jsonl
+reports/*/review_packet*
+reports/*/review_key*
+reports/*/review_ratings*
+reports/*/*.log
+experiments/*/adapter/
+
+# TensorBoard
+runs/
+experiments/*/tb/
+reports/*.log

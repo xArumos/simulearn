@@ -1,0 +1,23 @@
+{
+ "train_skipped_too_long": 42,
+ "train_examples": 30314,
+ "train_tokens": 4274567,
+ "train_target_tokens": 278169,
+ "val_examples": 1000,
+ "val_tokens": 137867,
+ "val_target_tokens": 8899,
+ "trainable_params": 18464768,
+ "total_params": 1562179072,
+ "train_seconds": 5163,
+ "train_result": {
+  "train_runtime": 5161.9659,
+  "train_samples_per_second": 11.745,
+  "train_steps_per_second": 0.734,
+  "total_flos": 1.08675683273472e+17,
+  "train_loss": 2.221792413313974,
+  "epoch": 2.0
+ },
+ "best_checkpoint": "/mnt/c/Users/justin/dev/simulearn-testing/experiments/20261015-2125_qwen1.5b_lora_r16_lr2e-4/checkpoints/checkpoint-3311",
+ "best_eval_loss": 2.201528549194336,
+ "peak_vram_gib": 10.48
+}

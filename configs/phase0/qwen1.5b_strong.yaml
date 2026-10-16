@@ -1,0 +1,24 @@
+run_name: qwen1.5b_base-strong
+hypothesis: "Baseline (no fine-tuning), strong system prompt. Expected: replies longer and more adult-like than real 5-year-olds."
+age_label: 5
+model:
+  name: Qwen/Qwen2.5-1.5B-Instruct
+  adapter: null
+  load_in_4bit: false
+  dtype: bfloat16
+data:
+  processed_dir: data/processed
+  bucket: age5
+eval:
+  split: val
+  max_examples: 1000      # fixed deterministic sample, same for every run
+  sample_seed: 42
+  prompt_variant: strong
+  temperature: 0.7
+  top_p: 0.9
+  max_new_tokens: 60
+  seed: 1234
+  batch_size: 64
+  max_length: 512
+  compute_loss: true
+  loss_batch_size: 4

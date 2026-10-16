@@ -1,0 +1,60 @@
+# Preprocessing config. Paths are relative to the project root (or absolute, e.g. on HiPerGator).
+raw_dir: data/raw/extracted
+processed_dir: data/processed
+
+# North American English by default (DECISIONS.md D2). Eng-UK is a fallback only.
+collections: [Eng-NA, Eng-AAE]
+corpora: [HSLLD, OCSC, Gelman, Cameron, Warren, MacWhinney]
+# Hall is excluded: every file is unchecked ASR output with no target child or ages (DECISIONS.md D3).
+exclude_asr: true
+language: eng
+
+# Splits are made over all children in 48-71 months, so a child stays in one split across buckets.
+split_age_range: [48, 71]
+buckets:
+  age5: {min_months: 60, max_months: 71, age_label: 5}
+  age4: {min_months: 48, max_months: 59, age_label: 4}
+
+split:
+  fractions: [0.8, 0.1, 0.1]
+  seed: 42
+golden:
+  n: 30
+  per_child: 2
+  min_context_turns: 2
+
+build:
+  context_turns: 6
+  system_prompt: "You are a {age}-year-old child talking with a caregiver. Reply the way a real child of that age would."
+  # Speakers removed and treated as a conversation break (no context across them).
+  break_speakers:
+    OCSC: [OTH]   # the Jibo social robot
+  break_roles: [Media]
+  # Context-only stand-in for an utterance that is entirely xxx/yyy/www (never a target).
+  unintelligible_placeholder: "(unintelligible)"
+
+clean:
+  keep_fragments: false
+  keep_terminator_punct: true
+  target_drop_postcodes: [read]
+
+silence:
+  enabled: true
+  threshold_s: 2.0
+  cap_s: 10
+  template: "<SILENCE FOR {x} SECONDS>"
+  min_timed_fraction: 0.5
+
+# How to get a stable child ID per corpus (see src/data/child_ids.py).
+child_id_rules:
+  HSLLD:
+    rule: regex
+    pattern: '^([a-z]{3})'
+    link_pattern: '^([a-z]{3})[a-z0-9]*_([a-z]{3})'   # cal_jakbr1, zan_alibr1_mi1, con_joeact2
+    link_by_birth: true
+  Cameron:
+    rule: regex
+    pattern: '^B\d+_(\d+)_'
+  MacWhinney:
+    rule: participant_code    # CHI = Ross, MAR = Mark across all sessions
+  # OCSC, Gelman, Warren: one child per file (default rule: file)

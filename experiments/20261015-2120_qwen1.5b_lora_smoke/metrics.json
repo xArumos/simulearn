@@ -1,0 +1,89 @@
+{
+ "n": 100,
+ "generated": {
+  "mean_words": 6.68,
+  "median_words": 4.0,
+  "p90_words": 15.100000000000009,
+  "msttr_100": 0.6233333333333333,
+  "distinct_1": 0.38772455089820357,
+  "distinct_2": 0.7341549295774648,
+  "empty_rate": 0.0,
+  "loop_rate": 0.03,
+  "meta_rate": 0.0,
+  "continues_other_side_rate": 0.0,
+  "multiline_rate": 0.0,
+  "filler_rate": 0.1,
+  "short_answer_rate": 0.14,
+  "repetition_rate": 0.08,
+  "nonstandard_rate": 0.04,
+  "silence_rate": 0.0,
+  "silence_malformed_rate": 0.0,
+  "over_20_words_rate": 0.06,
+  "degenerate_rate": 0.03,
+  "silence_tokens_by_seconds": {},
+  "oov_rate": 0.010479041916167664,
+  "rare_word_rate": 0.05239520958083832
+ },
+ "reference": {
+  "mean_words": 5.38,
+  "median_words": 4.0,
+  "p90_words": 12.0,
+  "msttr_100": 0.6860000000000002,
+  "distinct_1": 0.4312267657992565,
+  "distinct_2": 0.8904109589041096,
+  "empty_rate": 0.0,
+  "loop_rate": 0.0,
+  "meta_rate": 0.0,
+  "continues_other_side_rate": 0.0,
+  "multiline_rate": 0.0,
+  "filler_rate": 0.14,
+  "short_answer_rate": 0.18,
+  "repetition_rate": 0.06,
+  "nonstandard_rate": 0.06,
+  "silence_rate": 0.07,
+  "silence_malformed_rate": 0.0,
+  "over_20_words_rate": 0.02,
+  "degenerate_rate": 0.0,
+  "silence_tokens_by_seconds": {
+   "2": 1,
+   "3": 1,
+   "5": 2,
+   "7": 2,
+   "10": 1
+  },
+  "oov_rate": 0.016728624535315983,
+  "rare_word_rate": 0.0762081784386617
+ },
+ "length_ks": 0.07000000000000006,
+ "length_wasserstein": 1.4400000000000004,
+ "child_marker_gap": 0.03833333333333333,
+ "degeneration_rate": 0.03,
+ "target_loss": {
+  "loss": 2.47221513344486,
+  "perplexity": 11.848664175782988,
+  "n_examples": 100,
+  "n_tokens": 893
+ },
+ "run": {
+  "run_id": "20261015-2120_qwen1.5b_lora_smoke",
+  "model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "adapter": "/mnt/c/Users/justin/dev/simulearn-testing/experiments/20261015-2120_qwen1.5b_lora_smoke/adapter",
+  "split": "val",
+  "bucket": "age5",
+  "prompt_variant": "default",
+  "generation_seconds": 11.5,
+  "peak_vram_gib": 4.75,
+  "reproducible": {
+   "n": 32,
+   "identical": true
+  },
+  "decoding": {
+   "temperature": 0.7,
+   "top_p": 0.9,
+   "max_new_tokens": 60,
+   "seed": 1234,
+   "batch_size": 64,
+   "max_length": 512
+  }
+ }
+}
