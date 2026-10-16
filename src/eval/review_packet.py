@@ -41,7 +41,11 @@ def main() -> None:
         tok = load_tokenizer(cfg["model"]["name"])
         model = load_model(cfg["model"])
         ev = cfg["eval"]
-        items = golden
+        # Each system sees the golden conversations in its own data format (e.g. 10-turn context for a
+        # ctx10 model), matched by example id. Raters always see the default (6-turn) context.
+        sys_dir = resolve(cfg["data"]["processed_dir"]) / a.bucket
+        by_id = {r["id"]: r for r in read_jsonl(sys_dir / "test.jsonl")} if sys_dir != resolve("data/processed") / a.bucket else {}
+        items = [by_id.get(g["id"], g) for g in golden]
         if ev.get("prompt_variant", "default") == "strong":
             items = with_system(golden, STRONG_PROMPT.format(age=cfg.get("age_label", 5)))
         replies[name] = generate_replies(model, tok, items, temperature=ev["temperature"], top_p=ev["top_p"],

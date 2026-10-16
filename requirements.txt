@@ -88,3 +88,4 @@ typing-extensions==4.16.0
 werkzeug==3.1.9
 xxhash==4.0.1
 yarl==1.25.1
+gradio==6.30.0  # live demo only (src/demo/chat_demo.py)

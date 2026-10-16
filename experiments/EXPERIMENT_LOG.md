@@ -70,3 +70,46 @@ All Phase 0/1 evaluations use the same 1,000-example deterministic sample of the
 **Verdict: worse than run 1.** Run 1 stays the best.
 **Read 20 samples:** child-like in tone ("um a toy plane.", "see what you messed up."), but even shorter and safer than Qwen. "yeah" is the reply 114 times per 1,000 (real: 44); "I don't know" 38 (real: 8). It often echoes the adult's last words ("he's getting little.", "on a leaf.") instead of answering.
 **Next:** paused at the user's request (GitHub setup). When resuming: Qwen epochs=1, then context 10 turns (YELLOW).
+
+## Phase 1 — Run 3: 20261016-0003_qwen1.5b_lora_ep1
+**Hypothesis:** one epoch matches two (run 1's val loss at 1.0 ep was 2.2045 vs 2.2015 best), at half the cost.
+**Config diff vs run 1:** `train.epochs: 2 → 1`.
+**Cost:** 40 min train + 1 min eval, peak VRAM 10.5 GB.
+**Val loss:** 2.3135 → 2.2487 → 2.214 → **2.2040 (1.0 ep)**. Train loss 2.40.
+
+| Metric | Real | Run 1 | Run 3 |
+|---|---|---|---|
+| Mean words | 5.10 | 4.45 | **5.01** |
+| Length KS ↓ | – | 0.032 | **0.031** |
+| Filler / short / repet / nonstd / silence | 13.9 / 15.6 / 7.0 / 5.1 / 5.7% | 11.7 / 20.9 / 3.5 / 6.8 / 4.5% | 13.0 / 21.6 / 4.5 / 6.5 / 5.7% |
+| Marker gap ↓ | – | 0.025 | **0.018** |
+| Degenerate ↓ | 0.8% | 0.2% | 0.5% |
+| Rare words / distinct-2 | 9.0% / 0.726 | 4.7% / 0.638 | 5.7% / 0.611 |
+| Child loss ↓ | – | **2.199** | 2.205 |
+
+**Verdict: improved, so run 3 is the new best.** It is closer to the real data on length and child markers, and loss is within 0.3% (treated as "no worse"), at half the cost. Diversity is slightly lower (distinct-2 0.611 vs 0.638).
+**Read 20 samples:** about the same quality as run 1, with some nicer matches ("I need pushed." → "pushed."; "what if I don't like them?"). "I don't know" is still overused: 40 vs 38 (run 1) vs 8 (real). Not fixed by fewer epochs.
+**Ops note:** the run finished at ~00:45, but the watcher never reported. Its `pgrep -f` pattern matched its own command line, so it waited forever. GPU idle time 00:45–09:59 is not a training problem. Fix: run the training command itself as the background task (as for runs 1–2).
+**Next:** run 4 = run 3 + context 10 turns (D6).
+
+## Phase 1 — Run 4: 20261016-1000_qwen1.5b_lora_ep1_ctx10
+**Hypothesis (D6, YELLOW):** 10 context turns instead of 6 give the model more to anchor on, so fewer generic replies ("I don't know", "yeah"), with loss no worse.
+**Config diff vs run 3:** `data.processed_dir: data/processed_ctx10`, `context_turns: 10` (same children, same splits, same 1,000 eval IDs; 217 vs 149 mean tokens).
+**Cost:** 38 min train (paused 10:14–12:13 at checkpoint-473 for the meeting demo, then resumed cleanly) + 1 min eval.
+**Val loss:** 2.2708 (0.25 ep) → 2.213 → 2.179 → **2.1692 (1.0 ep)**, vs run 3's 2.2040. Loss is better at every checkpoint.
+
+**Noise check (new):** both run 3 and run 4 were re-evaluated with a second sampling seed (4321), as separate runs `*_evalseed4321`.
+
+| Metric | Real | Run 3 (seed A / B) | Run 4 (seed A / B) |
+|---|---|---|---|
+| Mean words | 5.10 | 5.01 / 4.85 | 4.51 / 4.39 |
+| Length KS ↓ | – | **0.031 / 0.032** | 0.048 / 0.046 |
+| Marker gap ↓ | – | 0.018 / 0.022 | 0.021 / 0.022 |
+| Degenerate ↓ | 0.8% | 0.5% / 0.9% | 0.8% / 0.2% |
+| "I don't know" per 1,000 | 8 | 40 / 49 | **34 / 30** |
+| Unique replies per 1,000 | 842 | 741 / 722 | 740 / 747 |
+| Child loss ↓ | – | 2.205 | **2.176** |
+
+**Reading:** the marker gap and degeneration differences flip between seeds, so they're noise (about ±0.004 and ±0.5 pts). The length gap (KS ~0.047 vs ~0.031) and "I don't know" (~25% fewer) hold on both seeds.
+**Verdict: mixed.** Run 4 is better on loss and on the targeted weakness ("I don't know"), and its replies engage a bit more ("what's that?" → "a fishy."; "what kind of frosting?" → "um chocolate."). Run 3 is better on the length distribution. Run 4 also shows some new disengaged replies ("I don't want to talk. I'm tired."). Neither dominates on the §9.1 definition of "better", so **both go into the blinded review packet** and the human ratings break the tie. Run 3 stays the default "best" until then.
+**Next:** review packet (real vs strong baseline vs run 3 vs run 4); runs 5–6 after the user decides.

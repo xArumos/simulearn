@@ -3,10 +3,14 @@
 _Last updated: 2026-10-15 (session 1)_
 
 ## Current phase and step
-Phase 1 (LoRA): 2 of 6 runs done. **Paused, nothing running.** The user is connecting the project to their GitHub repo as an orphan branch. Resume with the next planned actions below once they say go.
+Phase 1 (LoRA): 4 of 6 runs done, nothing running. **Waiting on the user's blind ratings** of `reports/phase1/review_packet.md` (real vs strong baseline vs run 3 vs run 4). Phase 1 exit requires it.
+Live demo: `bash scripts/demo.sh` in WSL, then open http://localhost:7860 (src/demo/chat_demo.py; base Qwen vs run-3 adapter). Demo stopped after the meeting. Stop the demo before any training (both together exceed 12 GB VRAM).
 
 ## Best model so far
-**Run 1 `20261015-2125_qwen1.5b_lora_r16_lr2e-4`** (adapter in `experiments/<run>/adapter/`). Val: mean 4.45 words (real 5.10), length KS 0.032, marker gap 0.025, degenerate 0.2%, child loss 2.199 (ppl 9.0). Beats all baselines. Main weakness: overuses "I don't know" (~5x real) and short answers; less diverse than real.
+**Tie between run 3 and run 4, to be settled by human ratings.**
+- Run 3 `20261016-0003_qwen1.5b_lora_ep1` (6-turn context): length KS 0.031 (best), 5.0 words, loss 2.205, "I don't know" 40-49/1,000.
+- Run 4 `20261016-1000_qwen1.5b_lora_ep1_ctx10` (10-turn context): loss 2.176 (best), ~25% fewer "I don't know" (30-34/1,000), but shorter replies (4.4-4.5 words, KS ~0.047).
+- Noise floor from a second-seed re-eval: marker gap ±0.004, degeneration ±0.5 pts (EXPERIMENT_LOG run 4).
 
 ## Phase 0 results (val, 1,000 contexts; full table reports/phase0/comparison.md)
 - Real children: mean 5.10 words (median 3); filler 13.9%, repetition 7.0%, non-standard 5.1%, silence 5.7%.
@@ -34,12 +38,15 @@ Inside WSL: `source /mnt/c/Users/justin/dev/simulearn-testing/scripts/env_wsl.sh
 From Claude's Windows shell: write a .sh to the scratchpad, then run `wsl.exe -d Ubuntu -- bash /mnt/c/.../that.sh` (with `MSYS_NO_PATHCONV=1`).
 
 ## Next planned actions
-1. Run 2 done: SmolLM2 LoRA is worse than Qwen LoRA (3.35 words, KS 0.165, 'yeah' 114/1000). Qwen stays the base model for Phase 1.
-2. One-variable runs from the best: epochs=1 (cheaper; epoch 2 gave ~0.003 val loss), then context 10 turns (YELLOW: DECISIONS entry + re-preprocess with build.context_turns=10).
-3. Review packet with the best LoRA vs the strong baseline vs real (`python -m src.eval.review_packet ...`), then a user rating round. Phase 1 exit requires it.
+1. When ratings come back: `python -m src.eval.score_ratings --phase phase1 [--csv one file per rater]` → `reports/phase1/ratings_summary.md`. Pick the best of runs 3/4.
+2. Runs 5-6 (one variable from the winner; grid lr 1e-4/5e-4, rank 8/32), if the user wants them. The stop rule counts run 4 as "not improved" (mixed), which is 1 of 3.
+3. Phase 1 report `reports/phase1/phase_report.md` (with test-split metrics for the final pick), then Phase 2 (QLoRA 7B).
+4. Rebuild the meeting notebook after any new result: `python scripts/build_meeting_notebook.py`.
 
 ## Waiting on user
-- Non-blocking: Dr. Dever may still confirm Cameron (Eng-AAE).
+- **Blind ratings:** fill in `reports/phase1/review_ratings.csv` (28 items x 4 replies; 1-5 child-likeness, coherence, age-appropriateness). Each teammate can rate their own copy of the CSV. Don't open `review_key.json` until done. These files contain CHILDES text: local only, git-ignored.
+- Decide whether to spend runs 5-6 before or after the ratings.
+- Non-blocking: Dr. Dever to confirm Cameron (Eng-AAE) and the HiPerGator allocation.
 
 ## Known issues
 - Test split is small for some corpora: Cameron has 3 age-5 children (0 in val); Warren has 0 in test; MacWhinney (Ross + Mark, one group) is all in train. Fine for an aggregate evaluation, but per-corpus test numbers would be noisy.

@@ -105,10 +105,13 @@ def main() -> None:
     ap.add_argument("--check-repro", type=int, default=0, help="generate the first N twice and check they are identical")
     ap.add_argument("--run-id", default=None)
     ap.add_argument("--adapter", default=None, help="override model.adapter (path to a trained LoRA adapter)")
+    ap.add_argument("--seed", type=int, default=None, help="override eval.seed (to measure sampling noise)")
     a = ap.parse_args()
     cfg = load_config(resolve(a.config))
     if a.adapter:
         cfg["model"]["adapter"] = a.adapter
+    if a.seed is not None:
+        cfg["eval"]["seed"] = a.seed
     out = make_run_dir(cfg, a.run_id)
     tok = load_tokenizer(cfg["model"]["name"])
     model = load_model(cfg["model"])

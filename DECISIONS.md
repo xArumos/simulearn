@@ -4,6 +4,14 @@ YELLOW and RED decisions, with what / why / evidence. Newest first.
 
 ---
 
+## 2026-10-16 — D6 (YELLOW): Try a 10-turn context window (Phase 1 run 4)
+**What:** One experiment with `build.context_turns: 10` (grid value from §8) instead of 6. The data is built into a separate folder, `data/processed_ctx10/` (config `configs/data_ctx10.yaml`), so the default 6-turn data and its splits stay as they are. The splits are identical (same children, same seed), because only the context length changes.
+**Why:** Run 1's main weakness is generic "safe" replies ("I don't know" ~5x more than real children; distinct-2 0.64 vs 0.73), and some replies ignore the adult's last turn. **Hypothesis:** more context gives the model more to anchor a specific reply to.
+**Evidence so far:** run 1 metrics and samples (EXPERIMENT_LOG.md). The default stays at 6 unless run 4 clearly wins on the primary metrics.
+**Outcome (2026-10-16):** mixed. Loss 2.176 vs 2.205 and ~25% fewer "I don't know", but replies are shorter (length KS 0.047 vs 0.031, stable across two seeds). **The default stays at 6 turns for now.** Runs 3 and 4 are both in the blinded review; if raters prefer run 4, switch the default to 10 with a new entry here.
+
+---
+
 ## 2026-10-15 — D5: Training and evaluation setup choices
 **Decided by:** Claude (GREEN implementation choices; logged for transparency).
 - **transformers `Trainer` + our own collator instead of TRL `SFTTrainer`.** The loss masking must be exactly the unit-tested code in `src/train/collator.py`. TRL's arguments change often (CLAUDE.md §5.4); in the installed transformers 5.20, `warmup_ratio`, `logging_dir` and `group_by_length` are already gone. TRL stays installed but unused.
