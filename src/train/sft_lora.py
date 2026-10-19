@@ -68,7 +68,9 @@ def trim_context(messages: list[dict], n_turns: int | None) -> list[dict]:
 
 def load_split(cfg: dict, split: str, n: int | None, seed: int, tok, max_length: int, stats: dict) -> list[dict]:
     d = cfg["data"]
-    rows = read_jsonl(resolve(d["processed_dir"]) / d["bucket"] / f"{split}.jsonl")
+    # Optional eval_bucket: train on one bucket (e.g. ages 4-6) but early-stop/validate on another (age 6).
+    bucket = d.get("eval_bucket", d["bucket"]) if split != "train" else d["bucket"]
+    rows = read_jsonl(resolve(d["processed_dir"]) / bucket / f"{split}.jsonl")
     if n and n < len(rows):
         rows = random.Random(seed).sample(rows, n)
     out = []

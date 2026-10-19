@@ -16,3 +16,12 @@ Downloaded by Justin Perkins via a logged-in TalkBank browser session ("Download
 | Warren-Leubecker | Eng-NA | https://talkbank.org/childes/access/Eng-NA/Warren.html | 2026-10-15 | 20 | yes |
 | MacWhinney | Eng-NA | https://talkbank.org/childes/access/Eng-NA/MacWhinney.html | 2026-10-15 | 416 | yes |
 | Fletcher | Eng-UK | https://talkbank.org/childes/access/Eng-UK/Fletcher.html | 2026-10-15 | 72 | **no**: UK fallback only (DECISIONS.md D2) |
+
+## Second download (Samaree Lewis, 2026-10-19), used by `configs/data_all.yaml` (DECISIONS.md D8)
+
+| Download | Collection | Download date | .cha files | Used by `data_all`? |
+|---|---|---|---|---|
+| Eng-NA MOR bundle (`0-Eng-NA-MOR.zip`, 50 corpora) | Eng-NA | 2026-10-19 | 8,411 | HSLLD, Gelman, Warren, MacWhinney, Brown, Kuczaj, Sachs, Gleason, Weist, Braunwald, Bliss, Hall, VanKleeck, Gathercole |
+| OCSC (`OCSC.zip`, https://talkbank.org/childes/access/Eng-NA/OCSC.html) | Eng-NA | 2026-10-19 | 303 | yes |
+
+Cameron (Eng-AAE) was not part of this download.

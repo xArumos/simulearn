@@ -223,7 +223,9 @@ def load_with_extra_range(cfg: dict, filt: Counter, fractions, seed):
 def write_bucket(bname, b, bviews, bcfg, split_of, group_of, splits, filt, cfg, out_root, age_check) -> None:
     out = out_root / bname
     out.mkdir(parents=True, exist_ok=True)
-    system = bcfg.system_prompt.format(age=b["age_label"])
+    # age_label: auto -> each example's prompt states that child's own age in years (mixed-age buckets).
+    auto_age = str(b["age_label"]).lower() == "auto"
+    system = None if auto_age else bcfg.system_prompt.format(age=b["age_label"])
     rules: Counter = Counter()
     build: Counter = Counter()
     rows: dict[str, list[dict]] = {"train": [], "val": [], "test": []}
@@ -246,7 +248,8 @@ def write_bucket(bname, b, bviews, bcfg, split_of, group_of, splits, filt, cfg, 
         for turn in turns:
             for x in SILENCE_RE.findall(turn.text):
                 tok_x[int(x)] += 1
-        exs = examples_from_turns(turns, system, bcfg.context_turns, build)
+        v_system = bcfg.system_prompt.format(age=v.age_months // 12) if auto_age else system
+        exs = examples_from_turns(turns, v_system, bcfg.context_turns, build)
         sp = split_of[v.child_id]
         pc = per_corpus[t.corpus]
         pc["transcripts"] += 1

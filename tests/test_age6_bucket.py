@@ -104,3 +104,46 @@ def test_age6_added_without_changing_age4_age5(raw_tree, tmp_path, capsys):
     top = json.loads(_read(after / "splits.json"))
     assert top["extra_age_range_months"] == [72, 83]
     assert all(any(k in top[s] for s in ["train", "val", "test"]) for k in new_kids)
+
+
+def test_auto_age_label_states_each_childs_age(raw_tree, tmp_path, capsys):
+    cfg = _cfg(raw_tree, tmp_path / "out", extra=True)
+    cfg["buckets"]["age4to6"] = {"min_months": 48, "max_months": 83, "age_label": "auto"}
+    run(cfg, ["age4to6", "age6"], verify=False)
+    capsys.readouterr()
+    rows = [json.loads(l) for s in ["train", "val", "test"]
+            for l in _read(tmp_path / "out" / "age4to6" / f"{s}.jsonl").splitlines()]
+    ages = {r["meta"]["age_months"] // 12 for r in rows}
+    assert ages == {4, 5, 6}
+    for r in rows:
+        assert f"{r['meta']['age_months'] // 12}-year-old" in r["messages"][0]["content"]
+    # The mixed bucket uses the same splits as the single-age buckets.
+    split6 = {json.loads(l)["meta"]["child_id"]: s for s in ["train", "val", "test"]
+              for l in _read(tmp_path / "out" / "age6" / f"{s}.jsonl").splitlines()}
+    for s in ["train", "val", "test"]:
+        for l in _read(tmp_path / "out" / "age4to6" / f"{s}.jsonl").splitlines():
+            cid = json.loads(l)["meta"]["child_id"]
+            assert split6.get(cid, s) == s
+
+
+def test_eval_bucket_used_for_validation(tmp_path, monkeypatch):
+    pytest.importorskip("torch")
+    import src.train.sft_lora as sft
+    for bucket, n in [("age5to6", 5), ("age6", 2)]:
+        d = tmp_path / bucket
+        d.mkdir()
+        for split in ["train", "val"]:
+            with open(d / f"{split}.jsonl", "w") as f:
+                for i in range(n):
+                    f.write(json.dumps({"id": f"{bucket}{i}", "messages": [
+                        {"role": "system", "content": "s"}, {"role": "user", "content": "u"},
+                        {"role": "assistant", "content": bucket}]}) + "\n")
+    seen = []
+    monkeypatch.setattr(sft, "encode_example", lambda tok, msgs, L: seen.append(msgs[-1]["content"]) or
+                        {"input_ids": [1], "labels": [1], "n_context_turns_used": 1})
+    cfg = {"data": {"processed_dir": str(tmp_path), "bucket": "age5to6", "eval_bucket": "age6"}}
+    sft.load_split(cfg, "train", None, 0, None, 512, {})
+    assert set(seen) == {"age5to6"}
+    seen.clear()
+    sft.load_split(cfg, "val", None, 0, None, 512, {})
+    assert set(seen) == {"age6"}

@@ -55,7 +55,7 @@ def make_run_dir(cfg: dict, run_id: str | None) -> Path:
 
 def eval_examples(cfg: dict, max_examples: int | None = None) -> tuple[list[dict], dict]:
     ev, data = cfg["eval"], cfg["data"]
-    bdir = resolve(data["processed_dir"]) / data["bucket"]
+    bdir = resolve(data["processed_dir"]) / data.get("eval_bucket", data["bucket"])
     examples = subsample(read_jsonl(bdir / f"{ev['split']}.jsonl"), max_examples or ev.get("max_examples"), ev.get("sample_seed", 42))
     if ev.get("prompt_variant", "default") == "strong":
         examples = with_system(examples, STRONG_PROMPT.format(age=cfg.get("age_label", 5)))
@@ -83,7 +83,7 @@ def evaluate_model(model, tok, cfg: dict, out: Path, max_examples: int | None = 
     if ev.get("compute_loss", True):
         metrics["target_loss"] = target_loss(model, tok, examples, ev.get("loss_batch_size", 4), ev.get("max_length", 512))
     metrics["run"] = {"run_id": out.name, "model": mcfg["name"], "adapter": mcfg.get("adapter"), "split": ev["split"],
-                      "bucket": cfg["data"]["bucket"], "prompt_variant": ev.get("prompt_variant", "default"),
+                      "bucket": cfg["data"].get("eval_bucket", cfg["data"]["bucket"]), "train_bucket": cfg["data"]["bucket"], "prompt_variant": ev.get("prompt_variant", "default"),
                       "generation_seconds": round(gen_s, 1), "peak_vram_gib": round(torch.cuda.max_memory_allocated() / 2**30, 2),
                       "reproducible": repro, "decoding": gen_kw}
     (out / "metrics.json").write_text(json.dumps(metrics, indent=1))

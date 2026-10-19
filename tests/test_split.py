@@ -11,6 +11,9 @@ def test_child_id_rules():
     assert child_id("HSLLD", "Eng-NA/HSLLD/HV1/MT/abcmt1.cha", "CHI", {"rule": "regex", "pattern": "^([a-z]{3})"}) == "HSLLD/abc"
     assert child_id("Mac", "Eng-NA/Mac/010203.cha", "MAR", {"rule": "participant_code"}) == "Mac/MAR"
     assert child_id("OCSC", "Eng-NA/OCSC/5/5001.cha", "CHI", None) == "OCSC/5/5001:CHI"
+    assert child_id("Brown", "Eng-NA/Brown/Adam/040912.cha", "CHI", {"rule": "dir"}) == "Brown/Adam"
+    assert child_id("Brown", "Eng-NA/Brown/x.cha", "CHI", {"rule": "dir"}) == "Brown/x:CHI"   # no folder -> file rule
+    assert child_id("VanKleeck", "Eng-NA/VanKleeck/amy2.cha", "CHI", {"rule": "regex", "pattern": "^([a-z]+)\\d"}) == "VanKleeck/amy"
     assert linked_ids("HSLLD", "x/abc_defbr1.cha", {"link_pattern": "^([a-z]{3})[a-z0-9]*_([a-z]{3})"}) == ["HSLLD/abc", "HSLLD/def"]
 
 

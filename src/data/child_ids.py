@@ -4,6 +4,7 @@ child_id = "<corpus>/<id>". How <id> is derived is set per corpus in the data co
   rule: file             -> file path without extension (one child per file; the default)
   rule: regex            -> first capture group of `pattern` on the file name
   rule: participant_code -> the target child's participant code (longitudinal corpora like MacWhinney)
+  rule: dir              -> the first folder under the corpus (one folder per child, e.g. Brown/Adam/...)
 
 Split groups: children that might be the same person, or that share a transcript, must be in the
 same split. We link child IDs with union-find when they
@@ -28,6 +29,10 @@ def child_id(corpus: str, rel_path: str, code: str, rule: dict | None) -> str:
             return f"{corpus}/{m.group(1)}"
     elif kind == "participant_code":
         return f"{corpus}/{code}"
+    elif kind == "dir":
+        parts = p.parts  # <collection>/<corpus>/<child folder>/.../<file>
+        if len(parts) >= 4:
+            return f"{corpus}/{parts[2]}"
     stem = p.with_suffix("").as_posix().split("/", 2)[-1]  # drop "<collection>/<corpus>/"
     return f"{corpus}/{stem}:{code}"
 

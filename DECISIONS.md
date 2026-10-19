@@ -4,6 +4,26 @@ YELLOW and RED decisions, with what / why / evidence. Newest first.
 
 ---
 
+## 2026-10-19 — D8 (approved by Samaree): Best 6-year-old from all usable North American data
+**Decided by:** Samaree Lewis ("make the best 6 year old we can ... use all the data").
+
+**What:**
+- `configs/data_all.yaml` → `data/processed_all/` (the default `data/processed/` and runs 0–4 are untouched). Corpora: the 6 defaults plus Brown, Kuczaj, Sachs, Gleason, Weist, Braunwald, Bliss, Hall, VanKleeck, Gathercole.
+- **Left out:** Hicks, PetersonMcCabe, Gopnik, Nicolopoulou (story retelling or narrative tasks), Garvey and Evans (child–child play, 0–1% adult speech), PLAY and Sprott (no usable 4–6 transcripts in this release).
+- **Hall is back in:** the Eng-NA MOR release has human transcripts with a target child and ages (0 files flagged as ASR), unlike the unchecked ASR files behind D3. `exclude_asr: true` still applies.
+- **New child-ID rule `dir`** (one folder per child: Brown, Weist). Single-child corpora use `participant_code` (Kuczaj, Sachs, Braunwald), Gleason/VanKleeck use file-name regexes, and Gathercole (several children per file, same children across sessions) uses participant codes. Over-linking is harmless; under-linking leaks.
+- **Mixed-age buckets** `age5to6` and `age4to6` with `age_label: auto`: each example's system prompt states that child's own age in years.
+- **`data.eval_bucket`** in training/eval configs: train on a mixed bucket, but validate, early-stop and evaluate on `age6`.
+- **Experiments** in `configs/age6/`: baselines (default, strong), smoke, then A (age6 only, 20,251 train), B (ages 5–6, 55,727), C (ages 4–6, 80,000 sampled of 170,384). One variable changes: the training data. Run all with `bash scripts/run_age6.sh`.
+
+**Evidence (counts only, Samaree's Eng-NA + OCSC download, 2026-10-19):** age6 103 children, 20,251 / 1,586 / 1,563; age5to6 262 children, 55,727 / 4,985 / 4,987; age4to6 652 children, 170,384 / 14,566 / 14,314. Cross-bucket leakage check: 0 children, files or groups in two splits. 56 tests pass (4 skipped: tokenizer download).
+
+**Note:** the extra corpora change the random split order, so `data/processed_all/` splits are not the same as `data/processed/`. Compare A/B/C with each other and with the age6 baselines in `configs/age6/`, not with runs 0–4.
+
+**Why:** more child speech should give more varied, less generic replies, the main weakness of runs 1–4 ("I don't know" ~5× the real rate). B and C test whether older-but-not-6 children help or blur the age.
+
+---
+
 ## 2026-10-19 — D7 (RED, approved by Samaree): Add an age-6 bucket (72–83 months)
 **Decided by:** Samaree Lewis ("focus on creating the 6 year old"). This changes the §4 age scope, so it is logged as an approved RED item.
 

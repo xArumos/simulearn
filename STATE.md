@@ -37,7 +37,11 @@ Phase 1 (LoRA): 4 of 6 runs done, nothing running. **Waiting on the user's blind
 Inside WSL: `source /mnt/c/Users/justin/dev/simulearn-testing/scripts/env_wsl.sh`, then e.g. `python -m src.data.preprocess`, `python -m pytest -q tests`.
 From Claude's Windows shell: write a .sh to the scratchpad, then run `wsl.exe -d Ubuntu -- bash /mnt/c/.../that.sh` (with `MSYS_NO_PATHCONV=1`).
 
-## Age-6 bucket added (2026-10-19, D7, code only, not run yet)
+## Best 6-year-old plan (2026-10-19, D8, code + data ready, not trained yet)
+- `bash scripts/run_age6.sh` (WSL, ~3.5–4 h): preprocess `configs/data_all.yaml` → baselines → smoke → A (age6 only) → B (ages 5–6) → C (ages 4–6) → `reports/age6/comparison.md`. Guide: `reports/age6/README.md`.
+- Needs the full Eng-NA download (incl. OCSC) in `data/raw/extracted/Eng-NA/`.
+
+## Age-6 bucket added (2026-10-19, D7)
 - `python -m src.data.preprocess --config configs/data_default.yaml` now also writes `data/processed/age6/` (72–83 months). age4/age5 output is unchanged (tested).
 - With OCSC: age6 = 99 children, 19,361 / 1,773 / 1,563 examples; largest single child 21.9% of train. **Ready to train** with `configs/phase1/qwen1.5b_lora_ep1_age6.yaml` (baseline: `configs/phase0/qwen1.5b_strong_age6.yaml`). See D7.
 - To do: run preprocessing, read `age6/stats.md` (enough examples? which corpora?), then `configs/phase0/qwen1.5b_strong_age6.yaml` (baseline) and `configs/phase1/qwen1.5b_lora_ep1_age6.yaml` (LoRA).
