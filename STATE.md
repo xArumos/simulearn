@@ -39,6 +39,7 @@ From Claude's Windows shell: write a .sh to the scratchpad, then run `wsl.exe -d
 
 ## Age-6 bucket added (2026-10-19, D7, code only, not run yet)
 - `python -m src.data.preprocess --config configs/data_default.yaml` now also writes `data/processed/age6/` (72–83 months). age4/age5 output is unchanged (tested).
+- Checked on Samaree's Eng-NA download (no OCSC/Cameron): 7,894 train examples, 38 children, but MacWhinney (1 child) is 54% of train. Re-run with OCSC before training (see D7).
 - To do: run preprocessing, read `age6/stats.md` (enough examples? which corpora?), then `configs/phase0/qwen1.5b_strong_age6.yaml` (baseline) and `configs/phase1/qwen1.5b_lora_ep1_age6.yaml` (LoRA).
 
 ## Next planned actions

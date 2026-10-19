@@ -15,6 +15,13 @@ YELLOW and RED decisions, with what / why / evidence. Newest first.
 
 **Why:** SimuLearn targets 4–6-year-olds. Several downloaded corpora already contain 6-year-olds (OCSC 4–9, HSLLD visits to ~6, Warren-Leubecker 4;6–6;2, MacWhinney, Gelman), so no new downloads are needed.
 
+**First real-data check (2026-10-19, Samaree's Eng-NA download only: no OCSC, no Cameron):**
+- age6: 38 children, 123 transcripts, **7,894 / 499 / 360** train/val/test examples (above the ~5,000 threshold). Median reply 3 words (mean 4.8).
+- Per corpus (train examples): MacWhinney 4,242 (**1 child, 54% of train**), Gelman 2,361, HSLLD 818, Warren 473. Val/test come only from Gelman and HSLLD (5 children).
+- age4/age5 outputs were byte-identical with and without the age6 bucket on this real data too.
+- Not added: Hicks and PetersonMcCabe (narratives), Evans (child-child play), per the D2/D4 selection rule.
+- **Risk:** one child (MacWhinney's Ross) dominates age6 training. Re-run with Justin's full download (OCSC has many 6-year-olds) before training; if one child still exceeds ~25% of train, cap examples per child (YELLOW).
+
 **Open questions:** how many age-6 training examples there are (check `data/processed/age6/stats.md`; the §4 ~5,000 rule applies). OCSC may dominate this bucket (lab tasks with a researcher), which could make the "I don't know" problem worse. Check the per-corpus counts before training.
 
 ---
