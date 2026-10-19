@@ -22,6 +22,12 @@ YELLOW and RED decisions, with what / why / evidence. Newest first.
 - Not added: Hicks and PetersonMcCabe (narratives), Evans (child-child play), per the D2/D4 selection rule.
 - **Risk:** one child (MacWhinney's Ross) dominates age6 training. Re-run with Justin's full download (OCSC has many 6-year-olds) before training; if one child still exceeds ~25% of train, cap examples per child (YELLOW).
 
+**With OCSC added (2026-10-19, Samaree's Eng-NA + OCSC; still no Cameron):**
+- age6: **99 children, 184 transcripts, 19,361 / 1,773 / 1,563** train/val/test examples. Median reply 3 words (mean 5.6).
+- Train by corpus: OCSC 11,467 (59%), MacWhinney 4,242 (**21.9%**, down from 54%, now under the 25% line), Gelman 2,361, HSLLD 818, Warren 473. Val/test: 19 children (OCSC 12, Gelman 4, HSLLD 3).
+- "I don't know" in real age-6 training targets: 20.5 per 1,000 (OCSC 24.9, Gelman 27.5, HSLLD 12.2). OCSC is not unusually high, so it is not the main source of run 1-4's over-use.
+- Real-data leakage test passes for age4/age5/age6. No per-child cap needed for now.
+
 **Open questions:** how many age-6 training examples there are (check `data/processed/age6/stats.md`; the §4 ~5,000 rule applies). OCSC may dominate this bucket (lab tasks with a researcher), which could make the "I don't know" problem worse. Check the per-corpus counts before training.
 
 ---
