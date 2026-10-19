@@ -37,6 +37,10 @@ Phase 1 (LoRA): 4 of 6 runs done, nothing running. **Waiting on the user's blind
 Inside WSL: `source /mnt/c/Users/justin/dev/simulearn-testing/scripts/env_wsl.sh`, then e.g. `python -m src.data.preprocess`, `python -m pytest -q tests`.
 From Claude's Windows shell: write a .sh to the scratchpad, then run `wsl.exe -d Ubuntu -- bash /mnt/c/.../that.sh` (with `MSYS_NO_PATHCONV=1`).
 
+## Age-6 bucket added (2026-10-19, D7, code only, not run yet)
+- `python -m src.data.preprocess --config configs/data_default.yaml` now also writes `data/processed/age6/` (72–83 months). age4/age5 output is unchanged (tested).
+- To do: run preprocessing, read `age6/stats.md` (enough examples? which corpora?), then `configs/phase0/qwen1.5b_strong_age6.yaml` (baseline) and `configs/phase1/qwen1.5b_lora_ep1_age6.yaml` (LoRA).
+
 ## Next planned actions
 1. When ratings come back: `python -m src.eval.score_ratings --phase phase1 [--csv one file per rater]` → `reports/phase1/ratings_summary.md`. Pick the best of runs 3/4.
 2. Runs 5-6 (one variable from the winner; grid lr 1e-4/5e-4, rank 8/32), if the user wants them. The stop rule counts run 4 as "not improved" (mixed), which is 1 of 3.

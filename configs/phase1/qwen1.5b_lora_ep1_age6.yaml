@@ -1,0 +1,48 @@
+# Age-6 bucket (DECISIONS.md D7), same recipe as run 3. Phase 1 starting config (CLAUDE.md §8): Qwen2.5-1.5B-Instruct, bf16, LoRA on all linear layers.
+run_name: qwen1.5b_lora_ep1_age6
+hypothesis: "The run-3 recipe (Qwen2.5-1.5B LoRA, 1 epoch, 6-turn context) transfers to 6-year-olds (72-83 months)."
+age_label: 6
+model:
+  name: Qwen/Qwen2.5-1.5B-Instruct
+  load_in_4bit: false
+  dtype: bfloat16
+  adapter: null
+data:
+  processed_dir: data/processed
+  bucket: age6
+  context_turns: 6          # grid: {3, 6, 10}; 10 needs re-preprocessing with build.context_turns: 10
+  max_train_examples: null  # all
+  max_val_examples: 1000    # for eval_loss during training (same fixed sample as the generation eval)
+  sample_seed: 42
+lora:
+  r: 16                     # grid: {8, 16, 32}
+  alpha: 32
+  dropout: 0.05
+  target_modules: all-linear
+train:
+  lr: 2.0e-4                # grid: {1e-4, 2e-4, 5e-4}
+  epochs: 1                 # grid: {1, 2, 3}
+  scheduler: cosine
+  warmup: 0.03
+  per_device_batch_size: 8
+  grad_accum: 2             # effective batch 16
+  max_length: 512
+  gradient_checkpointing: true
+  evals_per_epoch: 4        # eval + checkpoint every 1/4 epoch; best by val loss is kept
+  early_stopping_patience: 3
+  save_total_limit: 3
+  logging_steps: 10
+  seed: 42
+eval:
+  split: val
+  max_examples: 1000
+  sample_seed: 42
+  prompt_variant: default
+  temperature: 0.7
+  top_p: 0.9
+  max_new_tokens: 60
+  seed: 1234
+  batch_size: 64
+  max_length: 512
+  compute_loss: true
+  loss_batch_size: 4

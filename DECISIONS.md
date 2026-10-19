@@ -4,6 +4,21 @@ YELLOW and RED decisions, with what / why / evidence. Newest first.
 
 ---
 
+## 2026-10-19 — D7 (RED, approved by Samaree): Add an age-6 bucket (72–83 months)
+**Decided by:** Samaree Lewis ("focus on creating the 6 year old"). This changes the §4 age scope, so it is logged as an approved RED item.
+
+**What:**
+- New bucket `age6: {min_months: 72, max_months: 83, age_label: 6}` in `configs/data_default.yaml` and `configs/data_ctx10.yaml`.
+- New config key `split_extra_age_range: [72, 83]`. `src/data/preprocess.py` (`load_with_extra_range`) splits the 48–71-month children **exactly as before**, so `age4/` and `age5/` (examples, golden set, splits) are byte-identical and runs 0–4 stay comparable. A child already split keeps that split at age 6, and so does any new child linked to one. Children seen only at 72–83 months are split separately with the same 80/10/10 fractions and seed, stratified by corpus.
+- Configs: `configs/phase0/qwen1.5b_strong_age6.yaml` (baseline) and `configs/phase1/qwen1.5b_lora_ep1_age6.yaml` (run-3 recipe).
+- Tests: `tests/test_age6_bucket.py` (age4/age5 output unchanged, 6-year-old prompt, 72–83 months only, a child keeps one split across buckets, no child/file/group leakage, new-at-6 children split). The real-data leakage test now also covers age6.
+
+**Why:** SimuLearn targets 4–6-year-olds. Several downloaded corpora already contain 6-year-olds (OCSC 4–9, HSLLD visits to ~6, Warren-Leubecker 4;6–6;2, MacWhinney, Gelman), so no new downloads are needed.
+
+**Open questions:** how many age-6 training examples there are (check `data/processed/age6/stats.md`; the §4 ~5,000 rule applies). OCSC may dominate this bucket (lab tasks with a researcher), which could make the "I don't know" problem worse. Check the per-corpus counts before training.
+
+---
+
 ## 2026-10-16 — D6 (YELLOW): Try a 10-turn context window (Phase 1 run 4)
 **What:** One experiment with `build.context_turns: 10` (grid value from §8) instead of 6. The data is built into a separate folder, `data/processed_ctx10/` (config `configs/data_ctx10.yaml`), so the default 6-turn data and its splits stay as they are. The splits are identical (same children, same seed), because only the context length changes.
 **Why:** Run 1's main weakness is generic "safe" replies ("I don't know" ~5x more than real children; distinct-2 0.64 vs 0.73), and some replies ignore the adult's last turn. **Hypothesis:** more context gives the model more to anchor a specific reply to.

@@ -1,6 +1,6 @@
 """One-command preprocessing: raw .cha -> chat-format train/val/test JSONL per age bucket.
 
-    python -m src.data.preprocess --config configs/data_default.yaml [--buckets age5 age4] [--verify-ages]
+    python -m src.data.preprocess --config configs/data_default.yaml [--buckets age5 age4 age6] [--verify-ages]
 
 Deterministic: files are read in sorted order and the only randomness is seeded.
 Outputs (never committed; data/ is git-ignored):
@@ -58,9 +58,11 @@ def build_config(cfg: dict) -> BuildConfig:
     )
 
 
-def load_views(cfg: dict, filt: Counter) -> tuple[list[View], UnionFind]:
+def load_views(cfg: dict, filt: Counter, lo: int | None = None, hi: int | None = None) -> tuple[list[View], UnionFind]:
+    """Views (file, target child) with age in [lo, hi] months (default: split_age_range)."""
     root = resolve(cfg["raw_dir"])
-    lo, hi = cfg["split_age_range"]
+    if lo is None or hi is None:
+        lo, hi = cfg["split_age_range"]
     rules = cfg.get("child_id_rules", {}) or {}
     views: list[View] = []
     uf = UnionFind()
@@ -92,9 +94,9 @@ def load_views(cfg: dict, filt: Counter) -> tuple[list[View], UnionFind]:
                         filt["views_dropped_no_age"] += 1
                         continue
                     if not lo <= p.age_months <= hi:
-                        filt["views_dropped_age_out_of_48_71"] += 1
+                        filt[f"views_dropped_age_out_of_{lo}_{hi}"] += 1
                         continue
-                    filt["views_kept_48_71"] += 1
+                    filt[f"views_kept_{lo}_{hi}"] += 1
                     uf.find(cid)
                     views.append(View(t, p.code, p.age_months, cid))
                     if rule and rule.get("link_by_birth") and p.birth:
@@ -140,11 +142,14 @@ def run(cfg: dict, buckets: list[str], verify: bool) -> None:
     out_root = resolve(cfg["processed_dir"])
     out_root.mkdir(parents=True, exist_ok=True)
     filt: Counter = Counter()
-    views, uf = load_views(cfg, filt)
-
-    group_of = uf.groups()
     s = cfg.get("split", {})
-    splits = split_groups(group_of, tuple(s.get("fractions", (0.8, 0.1, 0.1))), s.get("seed", 42))
+    fractions, seed = tuple(s.get("fractions", (0.8, 0.1, 0.1))), s.get("seed", 42)
+    if cfg.get("split_extra_age_range"):
+        views, group_of, splits = load_with_extra_range(cfg, filt, fractions, seed)
+    else:
+        views, uf = load_views(cfg, filt)
+        group_of = uf.groups()
+        splits = split_groups(group_of, fractions, seed)
     files_by_child: dict[str, set[str]] = defaultdict(set)
     for v in views:
         files_by_child[v.child_id].add(v.transcript.path)
@@ -155,6 +160,7 @@ def run(cfg: dict, buckets: list[str], verify: bool) -> None:
         groups_json[g].append(cid)
     (out_root / "splits.json").write_text(json.dumps(
         {"seed": s.get("seed", 42), "fractions": s.get("fractions"), "age_range_months": cfg["split_age_range"],
+         "extra_age_range_months": cfg.get("split_extra_age_range"),
          **splits, "groups": {g: m for g, m in groups_json.items() if len(m) > 1}}, indent=1))
 
     age_check = verify_ages(views, resolve(cfg["raw_dir"])) if verify else None
@@ -163,6 +169,55 @@ def run(cfg: dict, buckets: list[str], verify: bool) -> None:
         b = cfg["buckets"][bname]
         bviews = [v for v in views if b["min_months"] <= v.age_months <= b["max_months"]]
         write_bucket(bname, b, bviews, bcfg, split_of, group_of, splits, filt, cfg, out_root, age_check)
+
+
+def load_with_extra_range(cfg: dict, filt: Counter, fractions, seed):
+    """Add older (or younger) children without changing the existing splits.
+
+    1. Children seen in ``split_age_range`` (48-71 months) are split exactly as before, so the
+       age4/age5 data and splits stay byte-identical and earlier runs remain comparable.
+    2. Views in ``split_extra_age_range`` (e.g. 72-83 months for age6) are added. A child already
+       split keeps its split; so does any new child linked to one (same family/file/birth date).
+    3. Children that only appear in the extra range are split separately with the same
+       fractions and seed (stratified by corpus).
+    """
+    anchor_views, anchor_uf = load_views(cfg, Counter())
+    anchor_groups = anchor_uf.groups()
+    anchor_splits = split_groups(anchor_groups, fractions, seed)
+    split_of = {cid: name for name, kids in anchor_splits.items() for cid in kids}
+
+    lo = min(cfg["split_age_range"][0], cfg["split_extra_age_range"][0])
+    hi = max(cfg["split_age_range"][1], cfg["split_extra_age_range"][1])
+    views, uf = load_views(cfg, filt, lo, hi)
+    full_groups = uf.groups()
+
+    members: dict[str, list[str]] = defaultdict(list)
+    for cid, g in full_groups.items():
+        members[g].append(cid)
+    inherited: dict[str, str] = {}
+    new_group_of: dict[str, str] = {}
+    for g, kids in members.items():
+        known = {split_of[c] for c in kids if c in split_of}
+        if len(known) > 1:
+            raise AssertionError(f"group {g} links children already in different splits: {sorted(known)}")
+        for c in kids:
+            if c in split_of:
+                continue
+            if known:
+                inherited[c] = next(iter(known))
+            else:
+                new_group_of[c] = g
+    extra_splits = split_groups(new_group_of, fractions, seed)
+
+    splits = {name: sorted(set(anchor_splits[name])
+                           | {c for c, n in inherited.items() if n == name}
+                           | set(extra_splits[name]))
+              for name in ("train", "val", "test")}
+    # Keep the original group IDs for already-split children so age4/age5 output is unchanged.
+    group_of = {**{c: full_groups[c] for c in full_groups}, **anchor_groups}
+    filt["children_inherited_split_via_link"] += len(inherited)
+    filt["children_new_in_extra_range"] += len(new_group_of)
+    return views, group_of, splits
 
 
 def write_bucket(bname, b, bviews, bcfg, split_of, group_of, splits, filt, cfg, out_root, age_check) -> None:

@@ -11,9 +11,12 @@ language: eng
 
 # Splits are made over all children in 48-71 months, so a child stays in one split across buckets.
 split_age_range: [48, 71]
+# Older children (age6) are added without changing the 48-71 splits; see load_with_extra_range.
+split_extra_age_range: [72, 83]
 buckets:
   age5: {min_months: 60, max_months: 71, age_label: 5}
   age4: {min_months: 48, max_months: 59, age_label: 4}
+  age6: {min_months: 72, max_months: 83, age_label: 6}
 
 split:
   fractions: [0.8, 0.1, 0.1]

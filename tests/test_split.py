@@ -53,7 +53,7 @@ def test_golden_limits_per_child():
 PROCESSED = resolve("data/processed")
 
 
-@pytest.mark.parametrize("bucket", ["age5", "age4"])
+@pytest.mark.parametrize("bucket", ["age5", "age4", "age6"])
 def test_real_data_no_leakage(bucket):
     d = PROCESSED / bucket
     if not (d / "train.jsonl").exists():
