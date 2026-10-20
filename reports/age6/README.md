@@ -42,6 +42,23 @@ bash scripts/run_age6.sh        # inside WSL, ~3.5–4 h on the RTX 4070 Ti
 
 The best 6-year-old is the run that is closest to the real-children row in
 `reports/age6/comparison.md`: length distribution (len KS ↓), child markers (marker gap ↓),
-degeneration ↓, "I don't know" rate, and loss. Then blind-rate the top two with the review packet:
-`python -m src.eval.review_packet --bucket age6 --phase age6 ...` (see `scripts/_make_review_packet.sh`).
-The test split stays untouched until the winner is chosen.
+degeneration ↓, "I don't know" rate, and loss. Then blind-rate the strong baseline and the top two
+with the review packet (18 held-out conversations, max 2 per child):
+
+```bash
+python -m src.eval.review_packet --bucket age6 --phase age6 --processed-dir data/processed_all \
+  --system strong=configs/age6/01_base_strong.yaml \
+  --system A=configs/age6/03_A_age6_only.yaml:experiments/<A run>/adapter \
+  --system B=configs/age6/04_B_ages5to6.yaml:experiments/<B run>/adapter
+```
+
+`--processed-dir data/processed_all` matters: the golden set must come from the same split the
+models were trained on. The test split stays untouched until the winner is chosen.
+
+## Verified before handing over (2026-10-19)
+
+The full chain ran end to end on the real age-6 data with a tiny stand-in model on CPU
+(no GPU in the build environment): baselines → smoke → A → B → C → comparison table →
+review packet. Validation loss fell in every run, B and C validated on age-6 data only,
+decoding was reproducible, and no golden-set child was in any training split. This proves
+the plumbing, not the quality: real numbers come from the Qwen run on the GPU.

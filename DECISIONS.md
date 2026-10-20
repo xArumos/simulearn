@@ -20,6 +20,8 @@ YELLOW and RED decisions, with what / why / evidence. Newest first.
 
 **Note:** the extra corpora change the random split order, so `data/processed_all/` splits are not the same as `data/processed/`. Compare A/B/C with each other and with the age6 baselines in `configs/age6/`, not with runs 0–4.
 
+**Verified 2026-10-19 (CPU, tiny stand-in model, real age-6 data):** baselines, smoke, A, B, C, compare and the review packet all ran end to end. Two bugs were found and fixed: `configs/age6/02_lora_smoke.yaml` did not parse (now covered by `tests/test_configs.py`, which loads every config and checks its buckets exist), and `review_packet.py` always read the golden set from `data/processed` (new `--processed-dir`, use `data/processed_all` for age6). Runs need the pinned `transformers==5.20.0` (4.57 rejects the fractional warmup) and `tensorboard`.
+
 **Why:** more child speech should give more varied, less generic replies, the main weakness of runs 1–4 ("I don't know" ~5× the real rate). B and C test whether older-but-not-6 children help or blur the age.
 
 ---

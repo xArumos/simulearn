@@ -1,7 +1,6 @@
 # Age-6 experiments (DECISIONS.md D8). Data: configs/data_all.yaml -> data/processed_all/. Every run is judged on the same age-6 validation sample.
 run_name: age6_qwen1.5b_lora_smoke
 hypothesis: "Smoke test: loss falls, masking right, no OOM, samples not garbage."
-  garbage.'
 age_label: 6
 model:
   name: Qwen/Qwen2.5-1.5B-Instruct

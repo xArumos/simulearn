@@ -1,6 +1,6 @@
 """Blinded human-review packet (CLAUDE.md §9.3) for the golden review set.
 
-    python -m src.eval.review_packet --bucket age5 --phase phase1 \
+    python -m src.eval.review_packet --bucket age5 --phase phase1 [--processed-dir data/processed] \
         --system baseline=configs/phase0/qwen1.5b_default.yaml \
         --system lora=configs/phase1/qwen1.5b_lora_base.yaml:experiments/<run>/adapter
 
@@ -26,12 +26,15 @@ from src.utils.modeling import load_model, load_tokenizer
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--bucket", default="age5")
+    ap.add_argument("--processed-dir", default="data/processed",
+                    help="where the golden set lives; must be the data the systems were trained on "
+                         "(data/processed_all for configs/age6)")
     ap.add_argument("--phase", required=True)
     ap.add_argument("--system", action="append", required=True, help="name=config.yaml[:adapter_path]")
     ap.add_argument("--seed", type=int, default=2026)
     a = ap.parse_args()
 
-    golden = read_jsonl(resolve("data/processed") / a.bucket / "golden_review.jsonl")
+    golden = read_jsonl(resolve(a.processed_dir) / a.bucket / "golden_review.jsonl")
     replies: dict[str, list[str]] = {"real": [e["messages"][-1]["content"] for e in golden]}
     for spec in a.system:
         name, rest = spec.split("=", 1)
@@ -44,7 +47,7 @@ def main() -> None:
         # Each system sees the golden conversations in its own data format (e.g. 10-turn context for a
         # ctx10 model), matched by example id. Raters always see the default (6-turn) context.
         sys_dir = resolve(cfg["data"]["processed_dir"]) / a.bucket
-        by_id = {r["id"]: r for r in read_jsonl(sys_dir / "test.jsonl")} if sys_dir != resolve("data/processed") / a.bucket else {}
+        by_id = {r["id"]: r for r in read_jsonl(sys_dir / "test.jsonl")} if sys_dir != resolve(a.processed_dir) / a.bucket else {}
         items = [by_id.get(g["id"], g) for g in golden]
         if ev.get("prompt_variant", "default") == "strong":
             items = with_system(golden, STRONG_PROMPT.format(age=cfg.get("age_label", 5)))
