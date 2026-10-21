@@ -1,0 +1,18 @@
+ADULT_ROLES = frozenset({
+    "Mother",
+    "Father",
+    "Investigator",
+    "Adult",
+    "Teacher",
+    "Grandmother",
+    "Grandfather",
+    "Relative",
+    "Aunt",
+    "Uncle",
+    "Caretaker",
+    "Babysitter",
+    "Visitor",
+    "Observer",
+    "Environment",
+    "Unidentified",
+})

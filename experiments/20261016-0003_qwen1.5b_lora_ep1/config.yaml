@@ -1,0 +1,48 @@
+run_name: qwen1.5b_lora_ep1
+hypothesis: 'One epoch matches two (run 1 val loss: 2.2045 at 1.0 ep vs 2.2015 best),
+  at half the cost.'
+age_label: 5
+model:
+  name: Qwen/Qwen2.5-1.5B-Instruct
+  load_in_4bit: false
+  dtype: bfloat16
+  adapter: null
+data:
+  processed_dir: data/processed
+  bucket: age5
+  context_turns: 6
+  max_train_examples: null
+  max_val_examples: 1000
+  sample_seed: 42
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: all-linear
+train:
+  lr: 0.0002
+  epochs: 1
+  scheduler: cosine
+  warmup: 0.03
+  per_device_batch_size: 8
+  grad_accum: 2
+  max_length: 512
+  gradient_checkpointing: true
+  evals_per_epoch: 4
+  early_stopping_patience: 3
+  save_total_limit: 3
+  logging_steps: 10
+  seed: 42
+eval:
+  split: val
+  max_examples: 1000
+  sample_seed: 42
+  prompt_variant: default
+  temperature: 0.7
+  top_p: 0.9
+  max_new_tokens: 60
+  seed: 1234
+  batch_size: 64
+  max_length: 512
+  compute_loss: true
+  loss_batch_size: 4

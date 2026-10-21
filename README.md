@@ -1,51 +1,32 @@
-# SimuLearn
+# SimuLearn child-speech LLM
 
-Research notebooks for CHILDES child-language statistics, caregiver-child
-conversation dataset construction, SFT preparation, and Qwen LoRA experiments.
+Fine-tunes a small LLM to reply the way a 4- or 5-year-old child would, trained on CHILDES child–caregiver transcripts.
 
-## Repository layout
+Status: setup in progress. See `STATE.md` for the current state and `CLAUDE.md` for the full project spec.
 
-- `notebooks/` — clean, source notebooks. Executed notebook copies are local
-  artifacts and are not tracked.
-- `data/raw/` — locally supplied corpus archives.
-- `data/processed/` — generated analysis tables and training datasets.
-- `data/experiments/` — model adapters, checkpoints, and evaluation outputs.
+Data: CHILDES (MacWhinney, B. (2000). *The CHILDES Project: Tools for Analyzing Talk*. 3rd ed. Lawrence Erlbaum.). The transcripts are CC BY-NC-SA and are **never** committed to this repo.
 
-Corpus data, processed data, model files, and notebook execution outputs are
-excluded from Git. This keeps the repository mergeable without distributing
-corpus archives or committing large/generated artifacts. See
-[`data/README.md`](data/README.md) for the local data layout.
+## Adult-target Gleason pilot
 
-## Setup
+This separate pilot prepares SFT examples whose targets are turns from the adult roles in
+`src/data/roles.py` or participants with a recorded age of at least 18 years. Child and other
+non-adult turns may appear as context, but are never training targets. Splits are grouped by child
+so that the same child cannot appear in more than one split.
 
-Run commands from the repository root. Create an environment and install the
-dependencies for the notebooks you plan to use:
+Place an authorized `Gleason.zip` at `data/raw/Gleason.zip`, then build the local dataset and
+inspect the counts-only role and split summary:
 
 ```powershell
-python -m pip install jupyter pandas matplotlib pylangacq
+python -m src.data.preprocess_adult --config configs/data_gleason_adult.yaml
 ```
 
-For notebook 04, install a PyTorch build appropriate for your hardware, then:
+The processed JSONL and split manifest are written under the git-ignored
+`data/processed/gleason_adult/`. After reviewing `stats.json`, the configured one-epoch LoRA
+pilot can be started with:
 
 ```powershell
-python -m pip install "transformers==4.57.4" datasets peft accelerate sentencepiece
+python -m src.train.sft_lora --config configs/phase1/qwen1.5b_lora_gleason_adult.yaml --run-id gleason-adult-pilot
 ```
 
-Place the authorized `Gleason.zip` and (for notebook 01) any other CHAT corpus
-archives in `data/raw/`. The notebook path configuration is repository-relative
-and also works when Jupyter is launched from `notebooks/`.
-
-## Notebook workflow
-
-1. `notebooks/01_childes_age_statistics.ipynb` — summarize CHILDES transcripts
-   for children aged 4–6.
-2. `notebooks/02_build_child_caregiver_dataset.ipynb` — build the Gleason
-   child-caregiver dataset.
-3. `notebooks/03_prepare_sft_and_baseline.ipynb` — prepare SFT splits and the
-   frozen baseline benchmark.
-4. `notebooks/04_baseline_and_lora.ipynb` — run baseline inference, LoRA
-   fine-tuning, and evaluation. This step downloads the configured base model
-   and can take substantial time and GPU memory.
-
-Outputs are written beneath `data/processed/` and `data/experiments/`; they are
-local artifacts and are not committed.
+This training command is intentionally not run during preprocessing setup. The local source
+archive and processed transcript text must not be committed.
