@@ -113,3 +113,12 @@ All Phase 0/1 evaluations use the same 1,000-example deterministic sample of the
 **Reading:** the marker gap and degeneration differences flip between seeds, so they're noise (about ±0.004 and ±0.5 pts). The length gap (KS ~0.047 vs ~0.031) and "I don't know" (~25% fewer) hold on both seeds.
 **Verdict: mixed.** Run 4 is better on loss and on the targeted weakness ("I don't know"), and its replies engage a bit more ("what's that?" → "a fishy."; "what kind of frosting?" → "um chocolate."). Run 3 is better on the length distribution. Run 4 also shows some new disengaged replies ("I don't want to talk. I'm tired."). Neither dominates on the §9.1 definition of "better", so **both go into the blinded review packet** and the human ratings break the tie. Run 3 stays the default "best" until then.
 **Next:** review packet (real vs strong baseline vs run 3 vs run 4); runs 5–6 after the user decides.
+
+## Adult-target Gleason pilot — gleason-adult-pilot (2026-10-20)
+
+**Purpose:** separate adult-response pilot, not directly comparable to the child-target Phase 1 runs.
+**Data:** 10,898 training examples from 20 child groups; 1,238 validation examples from 2 groups; 1,178 held-out test examples from 2 groups. Child and non-adult turns are context only. Training and generation evaluation used 1,000 deterministic validation examples; the test split was not evaluated.
+**Config:** Qwen2.5-1.5B-Instruct, 4-bit NF4 + FP16 LoRA (r=16, alpha=32, all-linear), one epoch, effective batch 16.
+**Cost:** 5.26 hours training, peak allocated GPU memory 3.19 GiB. Best checkpoint at step 510.
+**Loss:** training 2.4402; best validation loss during training 2.3078; post-training validation target loss 2.5179 (perplexity 12.40).
+**Validation generation:** mean 7.63 words (reference 7.58), length Wasserstein 0.683, degeneration 0.1%; reproducibility passed on 32 examples. See `gleason-adult-pilot/metrics.json` for aggregate metrics. Generated samples, adapters, checkpoints, and transcript text are excluded from Git.
