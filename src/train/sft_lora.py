@@ -119,6 +119,9 @@ def main() -> None:
 
     steps_per_epoch = max(1, len(train_rows) // (tr["per_device_batch_size"] * tr["grad_accum"]))
     eval_every = tr.get("eval_steps") or max(10, steps_per_epoch // tr.get("evals_per_epoch", 4))
+    warmup = tr.get("warmup", 0.03)
+    warmup_ratio = float(warmup) if isinstance(warmup, float) and 0 <= warmup < 1 else 0.0
+    warmup_steps = int(warmup) if warmup_ratio == 0 else 0
     args = TrainingArguments(
         output_dir=str(out / "checkpoints"),
         per_device_train_batch_size=tr["per_device_batch_size"],
@@ -128,9 +131,11 @@ def main() -> None:
         max_steps=tr.get("max_steps", -1),
         learning_rate=float(tr["lr"]),
         lr_scheduler_type=tr.get("scheduler", "cosine"),
-        warmup_steps=tr.get("warmup", 0.03),
+        warmup_ratio=warmup_ratio,
+        warmup_steps=warmup_steps,
         weight_decay=tr.get("weight_decay", 0.0),
-        bf16=True,
+        bf16=tr.get("bf16", True),
+        fp16=tr.get("fp16", False),
         gradient_checkpointing=tr.get("gradient_checkpointing", True),
         gradient_checkpointing_kwargs={"use_reentrant": False},
         eval_strategy="steps", eval_steps=eval_every,
