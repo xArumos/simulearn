@@ -1,14 +1,29 @@
-# Corpus archives and derived data are local-only.
-/data/raw/
-/data/processed/
-/data/experiments/
+# CHILDES data is CC BY-NC-SA: never commit raw or processed transcripts
+data/*
+!data/DATA_MANIFEST.md
 
-# Notebook execution artifacts.
-/notebooks/*_executed.ipynb
-**/.ipynb_checkpoints/
-
-# Python artifacts.
-__pycache__/
-*.py[cod]
+# Python / env
 .venv/
-venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Model weights and checkpoints
+experiments/*/checkpoints/
+*.safetensors
+*.bin
+*.pt
+*.gguf
+
+# Generated outputs that may contain CHILDES text
+experiments/*/samples.jsonl
+reports/*/review_packet*
+reports/*/review_key*
+reports/*/review_ratings*
+reports/*/*.log
+experiments/*/adapter/
+
+# TensorBoard
+runs/
+experiments/*/tb/
+reports/*.log

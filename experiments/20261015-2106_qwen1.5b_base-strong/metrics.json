@@ -1,0 +1,95 @@
+{
+ "n": 1000,
+ "generated": {
+  "mean_words": 5.805,
+  "median_words": 3.0,
+  "p90_words": 13.0,
+  "msttr_100": 0.7567241379310345,
+  "distinct_1": 0.19431524547803616,
+  "distinct_2": 0.7213319458896982,
+  "empty_rate": 0.0,
+  "loop_rate": 0.0,
+  "meta_rate": 0.033,
+  "continues_other_side_rate": 0.0,
+  "multiline_rate": 0.001,
+  "filler_rate": 0.121,
+  "short_answer_rate": 0.162,
+  "repetition_rate": 0.021,
+  "nonstandard_rate": 0.008,
+  "silence_rate": 0.001,
+  "silence_malformed_rate": 0.0,
+  "over_20_words_rate": 0.039,
+  "degenerate_rate": 0.033,
+  "silence_tokens_by_seconds": {
+   "2": 1
+  },
+  "oov_rate": 0.029285099052540915,
+  "rare_word_rate": 0.1359173126614987
+ },
+ "reference": {
+  "mean_words": 5.099,
+  "median_words": 3.0,
+  "p90_words": 11.0,
+  "msttr_100": 0.6514,
+  "distinct_1": 0.20043145714846047,
+  "distinct_2": 0.72554281532081,
+  "empty_rate": 0.0,
+  "loop_rate": 0.007,
+  "meta_rate": 0.001,
+  "continues_other_side_rate": 0.0,
+  "multiline_rate": 0.0,
+  "filler_rate": 0.139,
+  "short_answer_rate": 0.156,
+  "repetition_rate": 0.07,
+  "nonstandard_rate": 0.051,
+  "silence_rate": 0.057,
+  "silence_malformed_rate": 0.0,
+  "over_20_words_rate": 0.024,
+  "degenerate_rate": 0.008,
+  "silence_tokens_by_seconds": {
+   "2": 18,
+   "3": 16,
+   "4": 12,
+   "5": 6,
+   "6": 1,
+   "7": 5,
+   "8": 2,
+   "9": 1,
+   "10": 4
+  },
+  "oov_rate": 0.015885467738772308,
+  "rare_word_rate": 0.0902137674053736
+ },
+ "length_ks": 0.05600000000000005,
+ "length_wasserstein": 0.9600000000000004,
+ "child_marker_gap": 0.031166666666666665,
+ "degeneration_rate": 0.033,
+ "target_loss": {
+  "loss": 3.4762482060415816,
+  "perplexity": 32.33816805209604,
+  "n_examples": 999,
+  "n_tokens": 8895
+ },
+ "run": {
+  "run_id": "20261015-2106_qwen1.5b_base-strong",
+  "model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "adapter": null,
+  "split": "val",
+  "bucket": "age5",
+  "prompt_variant": "strong",
+  "generation_seconds": 56.2,
+  "peak_vram_gib": 4.5,
+  "reproducible": {
+   "n": 32,
+   "identical": true
+  },
+  "decoding": {
+   "temperature": 0.7,
+   "top_p": 0.9,
+   "max_new_tokens": 60,
+   "seed": 1234,
+   "batch_size": 64,
+   "max_length": 512
+  }
+ }
+}
