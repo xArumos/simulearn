@@ -4,6 +4,21 @@ YELLOW and RED decisions, with what / why / evidence. Newest first.
 
 ---
 
+## 2026-10-27 — D9 (approved by Samaree): CPU build of the 6-year-old with SmolLM2-360M
+**Decided by:** Samaree Lewis ("I want the full 6 year old now"), after the GPU route (Justin's PC) was not available tonight.
+
+**What:**
+- Model: `HuggingFaceTB/SmolLM2-360M-Instruct` (a §8 model, so not a RED base-model switch), LoRA r=16/alpha 32, lr 2e-4, 1 epoch, 6-turn context: the run-2 model with the run-3 recipe.
+- Machine: Claude's cloud workspace, 2 CPUs, 7 GB RAM, no GPU. fp32, batch 2 x grad-accum 8 (effective 16, as in §8), gradient checkpointing (batch 4 without it ran out of memory).
+- Data: `data/processed_all/age6`, **3,200 of 20,251 training examples** (random, seed 42). The full set would take ~23 h on CPU; 3,200 keeps the run near the §3 3-hour limit (~54 s/step, 200 steps).
+- Validation during training: 200 age-6 examples. **Reported numbers use the standard 1,000-example age-6 validation sample** (re-evaluated after training), next to untrained SmolLM2 baselines (default and strong prompt) on the same sample.
+- Smoke check: a 4-step run (loss 3.37, no out-of-memory) and the masking tests on the real SmolLM2 and Qwen tokenizers (5 passed) stood in for the 200-example smoke run.
+
+**Caveats:** smaller model (run 2 showed SmolLM2 is weaker than Qwen 1.5B: shorter, more generic replies) and 16% of the age-6 data. This is a working 6-year-old now, not the final one: the planned Qwen 1.5B runs A/B/C on a GPU should replace it.
+**Data handling:** the CHILDES transcripts were uploaded by Samaree into this private Claude workspace for processing; nothing is committed or shared. Confirm with Dr. Dever that this fits the TalkBank ground rules and the IRB determination.
+
+---
+
 ## 2026-10-19 — D8 (approved by Samaree): Best 6-year-old from all usable North American data
 **Decided by:** Samaree Lewis ("make the best 6 year old we can ... use all the data").
 

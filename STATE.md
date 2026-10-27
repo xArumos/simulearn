@@ -37,6 +37,9 @@ Phase 1 (LoRA): 4 of 6 runs done, nothing running. **Waiting on the user's blind
 Inside WSL: `source /mnt/c/Users/justin/dev/simulearn-testing/scripts/env_wsl.sh`, then e.g. `python -m src.data.preprocess`, `python -m pytest -q tests`.
 From Claude's Windows shell: write a .sh to the scratchpad, then run `wsl.exe -d Ubuntu -- bash /mnt/c/.../that.sh` (with `MSYS_NO_PATHCONV=1`).
 
+## CPU 6-year-old training (2026-10-27, D9, in progress)
+- `experiments/age6_A_smol360m_cpu`: SmolLM2-360M LoRA, 3,200 age-6 examples, CPU. Then standard 1,000-example eval + SmolLM2 baselines → `reports/age6/comparison_cpu.md`.
+
 ## Best 6-year-old plan (2026-10-19, D8, code + data ready, not trained yet)
 - `bash scripts/run_age6.sh` (WSL, ~3.5–4 h): preprocess `configs/data_all.yaml` → baselines → smoke → A (age6 only) → B (ages 5–6) → C (ages 4–6) → `reports/age6/comparison.md`. Guide: `reports/age6/README.md`.
 - Needs the full Eng-NA download (incl. OCSC) in `data/raw/extracted/Eng-NA/`.
