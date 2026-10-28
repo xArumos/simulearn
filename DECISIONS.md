@@ -14,6 +14,7 @@ YELLOW and RED decisions, with what / why / evidence. Newest first.
 - Validation during training: 200 age-6 examples. **Reported numbers use the standard 1,000-example age-6 validation sample** (re-evaluated after training), next to untrained SmolLM2 baselines (default and strong prompt) on the same sample.
 - Smoke check: a 4-step run (loss 3.37, no out-of-memory) and the masking tests on the real SmolLM2 and Qwen tokenizers (5 passed) stood in for the 200-example smoke run.
 
+**Outcome (2026-10-28):** trained. Beats both untrained SmolLM2 baselines on loss (2.109 vs 2.753), length KS (0.152 vs 0.186), degeneration (1.9% vs 5.5%) and diversity; worse on child markers (too many short "yeah." replies). Details in EXPERIMENT_LOG. Adapter: `experiments/age6_A_smol360m_cpu/adapter` (git-ignored, shared as a zip). Chat with it: `python scripts/chat_age6.py`.
 **Caveats:** smaller model (run 2 showed SmolLM2 is weaker than Qwen 1.5B: shorter, more generic replies) and 16% of the age-6 data. This is a working 6-year-old now, not the final one: the planned Qwen 1.5B runs A/B/C on a GPU should replace it.
 **Data handling:** the CHILDES transcripts were uploaded by Samaree into this private Claude workspace for processing; nothing is committed or shared. Confirm with Dr. Dever that this fits the TalkBank ground rules and the IRB determination.
 

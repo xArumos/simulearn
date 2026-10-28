@@ -1,0 +1,103 @@
+{
+ "n": 1000,
+ "generated": {
+  "mean_words": 8.265,
+  "median_words": 5.0,
+  "p90_words": 20.0,
+  "msttr_100": 0.5441463414634147,
+  "distinct_1": 0.12982456140350876,
+  "distinct_2": 0.48382656572608396,
+  "empty_rate": 0.0,
+  "loop_rate": 0.055,
+  "meta_rate": 0.0,
+  "continues_other_side_rate": 0.0,
+  "multiline_rate": 0.001,
+  "filler_rate": 0.211,
+  "short_answer_rate": 0.106,
+  "repetition_rate": 0.073,
+  "nonstandard_rate": 0.023,
+  "silence_rate": 0.081,
+  "silence_malformed_rate": 0.007,
+  "over_20_words_rate": 0.094,
+  "degenerate_rate": 0.055,
+  "silence_tokens_by_seconds": {
+   "2": 31,
+   "3": 39,
+   "4": 10,
+   "5": 12,
+   "6": 2,
+   "8": 1,
+   "9": 1,
+   "10": 4
+  },
+  "oov_rate": 0.029159104658197217,
+  "rare_word_rate": 0.08663036902601332
+ },
+ "reference": {
+  "mean_words": 5.373,
+  "median_words": 3.0,
+  "p90_words": 12.0,
+  "msttr_100": 0.6252830188679247,
+  "distinct_1": 0.19449097338544574,
+  "distinct_2": 0.6633889778184313,
+  "empty_rate": 0.0,
+  "loop_rate": 0.001,
+  "meta_rate": 0.0,
+  "continues_other_side_rate": 0.0,
+  "multiline_rate": 0.0,
+  "filler_rate": 0.168,
+  "short_answer_rate": 0.155,
+  "repetition_rate": 0.054,
+  "nonstandard_rate": 0.024,
+  "silence_rate": 0.122,
+  "silence_malformed_rate": 0.0,
+  "over_20_words_rate": 0.04,
+  "degenerate_rate": 0.001,
+  "silence_tokens_by_seconds": {
+   "2": 43,
+   "3": 47,
+   "4": 17,
+   "5": 13,
+   "6": 5,
+   "7": 4,
+   "8": 2,
+   "9": 2,
+   "10": 5
+  },
+  "oov_rate": 0.02400893355667225,
+  "rare_word_rate": 0.09026614554252745
+ },
+ "length_ks": 0.186,
+ "length_wasserstein": 2.9120000000000004,
+ "child_marker_gap": 0.034499999999999996,
+ "degeneration_rate": 0.055,
+ "target_loss": {
+  "loss": 2.7533884559410584,
+  "perplexity": 15.6957261561298,
+  "n_examples": 1000,
+  "n_tokens": 10291
+ },
+ "run": {
+  "run_id": "age6_smol360m_base-strong_cpu",
+  "model": "HuggingFaceTB/SmolLM2-360M-Instruct",
+  "adapter": null,
+  "split": "val",
+  "bucket": "age6",
+  "train_bucket": "age6",
+  "prompt_variant": "strong",
+  "generation_seconds": 1544.4,
+  "peak_vram_gib": 0.0,
+  "reproducible": {
+   "n": 32,
+   "identical": true
+  },
+  "decoding": {
+   "temperature": 0.7,
+   "top_p": 0.9,
+   "max_new_tokens": 60,
+   "seed": 1234,
+   "batch_size": 16,
+   "max_length": 512
+  }
+ }
+}

@@ -113,3 +113,28 @@ All Phase 0/1 evaluations use the same 1,000-example deterministic sample of the
 **Reading:** the marker gap and degeneration differences flip between seeds, so they're noise (about ±0.004 and ±0.5 pts). The length gap (KS ~0.047 vs ~0.031) and "I don't know" (~25% fewer) hold on both seeds.
 **Verdict: mixed.** Run 4 is better on loss and on the targeted weakness ("I don't know"), and its replies engage a bit more ("what's that?" → "a fishy."; "what kind of frosting?" → "um chocolate."). Run 3 is better on the length distribution. Run 4 also shows some new disengaged replies ("I don't want to talk. I'm tired."). Neither dominates on the §9.1 definition of "better", so **both go into the blinded review packet** and the human ratings break the tie. Run 3 stays the default "best" until then.
 **Next:** review packet (real vs strong baseline vs run 3 vs run 4); runs 5–6 after the user decides.
+
+
+## Age 6 — CPU build: age6_A_smol360m_cpu (2026-10-27, DECISIONS.md D9)
+**Hypothesis:** LoRA SFT on real 6-year-old replies makes SmolLM2-360M child-like for age 6 and beats its untrained baselines.
+**Config:** SmolLM2-360M-Instruct, LoRA r=16/alpha 32, lr 2e-4 cosine, 1 epoch, effective batch 16, 6-turn context, `data/processed_all/age6`, **3,200-example random sample** (3,189 used). CPU only (2 cores, 7 GB RAM): fp32, batch 2 x accum 8, gradient checkpointing.
+**Cost:** 200 steps at ~54 s/step, ~3 h 15 min of training in two sessions (resumed from checkpoint-98). Peak RAM ~3.5 GB.
+**Val loss (200 age-6 examples):** 2.287 (step 49) → 2.168 → 2.143 → **2.139** (step 200).
+
+Standard evaluation: same 1,000-example age-6 validation sample, T=0.7, top-p 0.9, 60 tokens, seed 1234. Full table: `reports/age6/comparison_cpu.md`.
+
+| Metric | Real 6-year-olds | SmolLM2 default prompt | SmolLM2 strong prompt | **Trained (CPU)** |
+|---|---|---|---|---|
+| Mean / median words | 5.37 / 3 | 8.93 / 6 | 8.27 / 5 | 3.61 / 2 |
+| Length KS ↓ | – | 0.249 | 0.186 | **0.152** |
+| Degenerate ↓ | 0.1% | 4.2% | 5.5% | **1.9%** |
+| Short answers | 15.5% | 8.9% | 10.6% | 33.0% |
+| Silence tokens | 12.2% | 6.6% | 8.1% | 7.2% |
+| Marker gap ↓ | – | **0.034** | **0.034** | 0.046 |
+| distinct-2 | 0.663 | 0.520 | 0.484 | **0.544** |
+| Child loss ↓ (ppl) | – | 2.766 (15.9) | 2.753 (15.7) | **2.109 (8.2)** |
+
+Reproducibility: 32 regenerated replies identical. No meta/assistant text (0.0%).
+**Verdict: improved over both baselines** on loss, length distribution, degeneration and diversity. **Worse on the child-marker gap**, driven by too many short answers (33% vs 15.5%).
+**Read 20 samples:** clearly child-like ("um chocolate.", counting "fourteen. five. six.", "pite?" for a nonce word, silence tokens before replies). Weaknesses: replies too short and generic: "yeah." is the reply 40 times in 300 and "I don't know" 47 per 1,000 vs 27 real; sometimes answers yes/no where the child gave a real answer. The same pattern run 2 showed for SmolLM2 at age 5.
+**Next:** this is the working age-6 model until the GPU runs. Run Qwen2.5-1.5B A/B/C on all 20k age-6 examples (`scripts/run_age6.sh`); age-5 results suggest Qwen fixes most of the shortness.
