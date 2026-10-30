@@ -147,3 +147,23 @@ def test_eval_bucket_used_for_validation(tmp_path, monkeypatch):
     seen.clear()
     sft.load_split(cfg, "val", None, 0, None, 512, {})
     assert set(seen) == {"age6"}
+
+
+def test_exclude_sample_gives_unseen_examples(tmp_path, monkeypatch):
+    pytest.importorskip("torch")
+    import random
+    import src.train.sft_lora as sft
+    d = tmp_path / "age6"
+    d.mkdir()
+    rows = [{"id": f"e{i}", "messages": [{"role": "system", "content": "s"}, {"role": "user", "content": "u"},
+                                         {"role": "assistant", "content": f"e{i}"}]} for i in range(100)]
+    (d / "train.jsonl").write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    seen = []
+    monkeypatch.setattr(sft, "encode_example", lambda tok, msgs, L: seen.append(msgs[-1]["content"]) or
+                        {"input_ids": [1], "labels": [1], "n_context_turns_used": 1})
+    first = {r["id"] for r in random.Random(42).sample(rows, 30)}
+    cfg = {"data": {"processed_dir": str(tmp_path), "bucket": "age6", "exclude_sample": {"n": 30, "seed": 42}}}
+    stats = {}
+    sft.load_split(cfg, "train", 30, 43, None, 512, stats)
+    assert len(seen) == 30 and not (set(seen) & first)
+    assert stats["train_excluded_seen"] == 30

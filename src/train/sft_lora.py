@@ -71,6 +71,12 @@ def load_split(cfg: dict, split: str, n: int | None, seed: int, tok, max_length:
     # Optional eval_bucket: train on one bucket (e.g. ages 4-6) but early-stop/validate on another (age 6).
     bucket = d.get("eval_bucket", d["bucket"]) if split != "train" else d["bucket"]
     rows = read_jsonl(resolve(d["processed_dir"]) / bucket / f"{split}.jsonl")
+    # Optional: skip the examples an earlier run sampled (continue training on unseen data).
+    ex = d.get("exclude_sample") if split == "train" else None
+    if ex:
+        seen = {r["id"] for r in random.Random(ex["seed"]).sample(rows, ex["n"])} if ex["n"] < len(rows) else {r["id"] for r in rows}
+        rows = [r for r in rows if r["id"] not in seen]
+        stats["train_excluded_seen"] = len(seen)
     if n and n < len(rows):
         rows = random.Random(seed).sample(rows, n)
     out = []
@@ -110,9 +116,10 @@ def main() -> None:
     model = load_model(cfg["model"], for_training=True)
     if cfg["model"].get("load_in_4bit"):
         model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=tr.get("gradient_checkpointing", True))
-    model = get_peft_model(model, LoraConfig(
-        r=lcfg["r"], lora_alpha=lcfg["alpha"], lora_dropout=lcfg.get("dropout", 0.05),
-        target_modules=lcfg.get("target_modules", "all-linear"), bias="none", task_type="CAUSAL_LM"))
+    if not cfg["model"].get("adapter"):  # with an adapter, load_model already returns it trainable: keep training it
+        model = get_peft_model(model, LoraConfig(
+            r=lcfg["r"], lora_alpha=lcfg["alpha"], lora_dropout=lcfg.get("dropout", 0.05),
+            target_modules=lcfg.get("target_modules", "all-linear"), bias="none", task_type="CAUSAL_LM"))
     trainable, total = model.get_nb_trainable_parameters()
     stats["trainable_params"], stats["total_params"] = trainable, total
     print(f"trainable params: {trainable:,} / {total:,} ({100 * trainable / total:.2f}%)", flush=True)
