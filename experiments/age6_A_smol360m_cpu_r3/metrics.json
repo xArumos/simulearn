@@ -1,0 +1,97 @@
+{
+ "n": 300,
+ "generated": {
+  "mean_words": 3.6266666666666665,
+  "median_words": 2.0,
+  "p90_words": 7.100000000000023,
+  "msttr_100": 0.5679999999999998,
+  "distinct_1": 0.2931985294117647,
+  "distinct_2": 0.6941624365482234,
+  "empty_rate": 0.0,
+  "loop_rate": 0.013333333333333334,
+  "meta_rate": 0.0,
+  "continues_other_side_rate": 0.0,
+  "multiline_rate": 0.0,
+  "filler_rate": 0.18666666666666668,
+  "short_answer_rate": 0.31666666666666665,
+  "repetition_rate": 0.05,
+  "nonstandard_rate": 0.013333333333333334,
+  "silence_rate": 0.06333333333333334,
+  "silence_malformed_rate": 0.0,
+  "over_20_words_rate": 0.016666666666666666,
+  "degenerate_rate": 0.013333333333333334,
+  "silence_tokens_by_seconds": {
+   "2": 16,
+   "3": 5,
+   "4": 1
+  },
+  "oov_rate": 0.009191176470588236,
+  "rare_word_rate": 0.04503676470588235
+ },
+ "reference": {
+  "mean_words": 5.783333333333333,
+  "median_words": 3.0,
+  "p90_words": 14.0,
+  "msttr_100": 0.6370588235294118,
+  "distinct_1": 0.31930835734870316,
+  "distinct_2": 0.7790940766550523,
+  "empty_rate": 0.0,
+  "loop_rate": 0.0,
+  "meta_rate": 0.0,
+  "continues_other_side_rate": 0.0,
+  "multiline_rate": 0.0,
+  "filler_rate": 0.14333333333333334,
+  "short_answer_rate": 0.14666666666666667,
+  "repetition_rate": 0.07333333333333333,
+  "nonstandard_rate": 0.02,
+  "silence_rate": 0.14666666666666667,
+  "silence_malformed_rate": 0.0,
+  "over_20_words_rate": 0.04666666666666667,
+  "degenerate_rate": 0.0,
+  "silence_tokens_by_seconds": {
+   "2": 15,
+   "3": 13,
+   "4": 9,
+   "5": 7,
+   "6": 2,
+   "7": 1,
+   "8": 1,
+   "10": 3
+  },
+  "oov_rate": 0.02824207492795389,
+  "rare_word_rate": 0.09740634005763689
+ },
+ "length_ks": 0.15333333333333332,
+ "length_wasserstein": 2.1766666666666667,
+ "child_marker_gap": 0.05944444444444444,
+ "degeneration_rate": 0.013333333333333334,
+ "target_loss": {
+  "loss": 1.9899521680156211,
+  "perplexity": 7.315183854181392,
+  "n_examples": 300,
+  "n_tokens": 3345
+ },
+ "run": {
+  "run_id": "age6_A_smol360m_cpu_r3",
+  "model": "HuggingFaceTB/SmolLM2-360M-Instruct",
+  "adapter": "/home/claude/simulearn/experiments/age6_A_smol360m_cpu_r3/adapter",
+  "split": "val",
+  "bucket": "age6",
+  "train_bucket": "age6",
+  "prompt_variant": "default",
+  "generation_seconds": 360.8,
+  "peak_vram_gib": 0.0,
+  "reproducible": {
+   "n": 32,
+   "identical": true
+  },
+  "decoding": {
+   "temperature": 0.7,
+   "top_p": 0.9,
+   "max_new_tokens": 60,
+   "seed": 1234,
+   "batch_size": 16,
+   "max_length": 512
+  }
+ }
+}

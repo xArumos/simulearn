@@ -163,3 +163,23 @@ Standard evaluation (same 1,000 age-6 validation contexts and decoding as round 
 **Read 20 samples:** child-like, with somewhat more content than round 1 ("um I like... I like to play with little stuffed animals.", "I put the food in their mouth.", "well I just build blocks."). Bare "yeah." / "I can." / "me." still common.
 **Verdict: improved (mostly).** Better on loss, degeneration, short answers, vocabulary, silence rate and marker gap; worse on the length distribution (replies a bit shorter, KS +0.013, larger than the ~±0.005 seed noise). Round 2 becomes the working 6-year-old.
 **Next:** round 3, same recipe on another 3,200 unseen examples (`exclude_sample` now takes a list so rounds 1 and 2 are both skipped).
+
+
+## Age 6 — CPU round 3: age6_A_smol360m_cpu_r3 (2026-10-31, D9)
+**Hypothesis:** continuing the round-2 adapter on another 3,200 unseen age-6 examples lowers loss further without making replies shorter.
+**Config diff vs round 2:** starts from the round-2 adapter; `exclude_sample` is a list (rounds 1 and 2) so all 3,190 examples are new; `sample_seed: 44`. ~3 h 20 min in two chunks.
+
+| Metric (same 1,000 val contexts) | Real | Round 2 (best) | Round 3 |
+|---|---|---|---|
+| Mean / median words | 5.37 / 3 | 3.43 / 2 | 3.47 / 2 |
+| Length KS ↓ | – | 0.165 | **0.159** |
+| Degenerate ↓ | 0.1% | 1.6% | **1.2%** |
+| Short answers | 15.5% | **31.2%** | 32.1% |
+| Rare words | 9.0% | **7.1%** | 5.4% |
+| Silence tokens | 12.2% | **8.9%** | 5.8% |
+| Marker gap ↓ | – | **0.044** | 0.049 |
+| Child loss ↓ (ppl) | – | 2.035 (7.7) | **2.003 (7.4)** |
+
+**Read 20 samples:** child-like and short ("two bags.", "the lake.", "he's a prince."); more bare "okay."/"um." and one "um, um, um..." loop.
+**Verdict: mixed → counted as not improved (1 of 3).** Better loss, degeneration and length; worse vocabulary, silence rate and marker gap. Gains are shrinking (loss −0.074 in round 2, −0.032 in round 3). Round 2 stays the working model.
+**Next:** round 4 = round 2 + another unseen chunk at lr 1e-4 (one change: learning rate).

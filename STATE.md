@@ -38,7 +38,7 @@ Inside WSL: `source /mnt/c/Users/justin/dev/simulearn-testing/scripts/env_wsl.sh
 From Claude's Windows shell: write a .sh to the scratchpad, then run `wsl.exe -d Ubuntu -- bash /mnt/c/.../that.sh` (with `MSYS_NO_PATHCONV=1`).
 
 ## Working 6-year-old (updated 2026-10-30, D9)
-- **Current best: round 2 `experiments/age6_A_smol360m_cpu_r2/adapter`** (continued on 3,200 unseen examples): loss 2.035 vs 2.109, fewer short answers/degenerate replies; length KS 0.165 vs 0.152 (slightly shorter). Round 3 (`age6_A_smol360m_cpu_r3`, another 3,200 unseen) in progress. Stop after 3 rounds with no gain.
+- **Current best: round 2 `experiments/age6_A_smol360m_cpu_r2/adapter`** (continued on 3,200 unseen examples): loss 2.035 vs 2.109, fewer short answers/degenerate replies; length KS 0.165 vs 0.152 (slightly shorter). Round 3 (`age6_A_smol360m_cpu_r3`): mixed, loss 2.003 but fewer silences/rare words, so not counted as improved (1 of 3). Round 4 (`age6_A_smol360m_cpu_r4_lr1e-4`, from round 2, lr 1e-4, rounds 1-3 data excluded) in progress. Stop after 3 rounds with no gain.
 - `experiments/age6_A_smol360m_cpu/adapter`: SmolLM2-360M LoRA trained on CPU on 3,200 age-6 examples. Beats its untrained baselines (loss 2.109 vs 2.753, length KS 0.152 vs 0.186) but replies are too short ("yeah." overuse). `reports/age6/comparison_cpu.md`.
 - Try it: `python scripts/chat_age6.py --adapter experiments/age6_A_smol360m_cpu/adapter`.
 - Replace with the Qwen 1.5B GPU runs (`scripts/run_age6.sh`) when a GPU is free.
