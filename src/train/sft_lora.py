@@ -72,11 +72,12 @@ def load_split(cfg: dict, split: str, n: int | None, seed: int, tok, max_length:
     bucket = d.get("eval_bucket", d["bucket"]) if split != "train" else d["bucket"]
     rows = read_jsonl(resolve(d["processed_dir"]) / bucket / f"{split}.jsonl")
     # Optional: skip the examples an earlier run sampled (continue training on unseen data).
+    # A list replays earlier rounds in order (round 2 sampled from what round 1 left, and so on).
     ex = d.get("exclude_sample") if split == "train" else None
-    if ex:
-        seen = {r["id"] for r in random.Random(ex["seed"]).sample(rows, ex["n"])} if ex["n"] < len(rows) else {r["id"] for r in rows}
+    for e in ([ex] if isinstance(ex, dict) else ex or []):
+        seen = {r["id"] for r in random.Random(e["seed"]).sample(rows, e["n"])} if e["n"] < len(rows) else {r["id"] for r in rows}
         rows = [r for r in rows if r["id"] not in seen]
-        stats["train_excluded_seen"] = len(seen)
+        stats["train_excluded_seen"] = stats.get("train_excluded_seen", 0) + len(seen)
     if n and n < len(rows):
         rows = random.Random(seed).sample(rows, n)
     out = []

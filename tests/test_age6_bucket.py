@@ -167,3 +167,11 @@ def test_exclude_sample_gives_unseen_examples(tmp_path, monkeypatch):
     sft.load_split(cfg, "train", 30, 43, None, 512, stats)
     assert len(seen) == 30 and not (set(seen) & first)
     assert stats["train_excluded_seen"] == 30
+    # Round 3: a list replays rounds 1 and 2, so it sees neither.
+    second = set(seen)
+    seen.clear()
+    cfg["data"]["exclude_sample"] = [{"n": 30, "seed": 42}, {"n": 30, "seed": 43}]
+    stats = {}
+    sft.load_split(cfg, "train", 30, 44, None, 512, stats)
+    assert len(seen) == 30 and not (set(seen) & (first | second))
+    assert stats["train_excluded_seen"] == 60

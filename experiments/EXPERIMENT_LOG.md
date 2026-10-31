@@ -138,3 +138,28 @@ Reproducibility: 32 regenerated replies identical. No meta/assistant text (0.0%)
 **Verdict: improved over both baselines** on loss, length distribution, degeneration and diversity. **Worse on the child-marker gap**, driven by too many short answers (33% vs 15.5%).
 **Read 20 samples:** clearly child-like ("um chocolate.", counting "fourteen. five. six.", "pite?" for a nonce word, silence tokens before replies). Weaknesses: replies too short and generic: "yeah." is the reply 40 times in 300 and "I don't know" 47 per 1,000 vs 27 real; sometimes answers yes/no where the child gave a real answer. The same pattern run 2 showed for SmolLM2 at age 5.
 **Next:** this is the working age-6 model until the GPU runs. Run Qwen2.5-1.5B A/B/C on all 20k age-6 examples (`scripts/run_age6.sh`); age-5 results suggest Qwen fixes most of the shortness.
+
+
+## Age 6 — CPU round 2: age6_A_smol360m_cpu_r2 (2026-10-30, D9)
+**Hypothesis:** continuing the round-1 adapter on 3,200 age-6 training examples it has not seen lowers loss and reduces the "yeah."/short-answer overuse.
+**Config diff vs round 1:** starts from the round-1 adapter (`model.adapter`); `data.exclude_sample: {n: 3200, seed: 42}` skips round 1's examples; `sample_seed: 43`. Everything else is the same (lr 2e-4 cosine, 1 epoch, 200 steps, CPU).
+**Cost:** ~3 h 25 min in two chunks (resumed from checkpoint-98).
+**Val loss (200-example sample, seed 43; not the same sample as round 1, so not directly comparable):** 2.032 → 2.010 → 1.981 → **1.978**.
+
+Standard evaluation (same 1,000 age-6 validation contexts and decoding as round 1):
+
+| Metric | Real | Round 1 | **Round 2** |
+|---|---|---|---|
+| Mean / median words | 5.37 / 3 | 3.61 / 2 | 3.43 / 2 |
+| Length KS ↓ | – | **0.152** | 0.165 |
+| Degenerate ↓ | 0.1% | 1.9% | **1.6%** |
+| Short answers | 15.5% | 33.0% | **31.2%** |
+| Rare words | 9.0% | 6.5% | **7.1%** |
+| Silence tokens | 12.2% | 7.2% | **8.9%** |
+| Marker gap ↓ | – | 0.046 | **0.044** |
+| distinct-1 / distinct-2 | 0.194 / 0.663 | 0.180 / 0.544 | **0.189** / 0.544 |
+| Child loss ↓ (ppl) | – | 2.109 (8.2) | **2.035 (7.7)** |
+
+**Read 20 samples:** child-like, with somewhat more content than round 1 ("um I like... I like to play with little stuffed animals.", "I put the food in their mouth.", "well I just build blocks."). Bare "yeah." / "I can." / "me." still common.
+**Verdict: improved (mostly).** Better on loss, degeneration, short answers, vocabulary, silence rate and marker gap; worse on the length distribution (replies a bit shorter, KS +0.013, larger than the ~±0.005 seed noise). Round 2 becomes the working 6-year-old.
+**Next:** round 3, same recipe on another 3,200 unseen examples (`exclude_sample` now takes a list so rounds 1 and 2 are both skipped).
