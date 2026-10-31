@@ -1,0 +1,24 @@
+{
+ "train_excluded_seen": 9600,
+ "train_skipped_too_long": 8,
+ "train_examples": 3192,
+ "train_tokens": 474838,
+ "train_target_tokens": 31863,
+ "val_examples": 200,
+ "val_tokens": 29708,
+ "val_target_tokens": 1972,
+ "trainable_params": 8683520,
+ "total_params": 370504640,
+ "train_seconds": 6446,
+ "train_result": {
+  "train_runtime": 6445.2595,
+  "train_samples_per_second": 0.253,
+  "train_steps_per_second": 0.016,
+  "total_flos": 1062563694332160.0,
+  "train_loss": 2.330827423170501,
+  "epoch": 1.0
+ },
+ "best_checkpoint": "/home/claude/simulearn/experiments/age6_A_smol360m_cpu_r4_lr1e-4/checkpoints/checkpoint-147",
+ "best_eval_loss": 2.000166416168213,
+ "peak_vram_gib": 0.0
+}

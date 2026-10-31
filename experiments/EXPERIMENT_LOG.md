@@ -183,3 +183,24 @@ Standard evaluation (same 1,000 age-6 validation contexts and decoding as round 
 **Read 20 samples:** child-like and short ("two bags.", "the lake.", "he's a prince."); more bare "okay."/"um." and one "um, um, um..." loop.
 **Verdict: mixed → counted as not improved (1 of 3).** Better loss, degeneration and length; worse vocabulary, silence rate and marker gap. Gains are shrinking (loss −0.074 in round 2, −0.032 in round 3). Round 2 stays the working model.
 **Next:** round 4 = round 2 + another unseen chunk at lr 1e-4 (one change: learning rate).
+
+
+## Age 6 — CPU round 4: age6_A_smol360m_cpu_r4_lr1e-4 (2026-10-31, D9)
+**Hypothesis:** continuing the round-2 adapter on 3,200 unseen examples at a lower learning rate (1e-4) keeps round 3's lower loss without losing silence tokens, rare words and child markers.
+**Config diff vs round 3:** starts from round 2 (the best), `lr: 1e-4`, rounds 1-3 excluded (9,600 seen), `sample_seed: 45`. ~3 h 20 min; best checkpoint at step 147 (val loss 2.000 on its own 200-example sample).
+
+| Metric (same 1,000 val contexts) | Real | Round 2 (best) | Round 3 | Round 4 |
+|---|---|---|---|---|
+| Mean words | 5.37 | 3.43 | 3.47 | 3.32 |
+| Length KS ↓ | – | 0.165 | **0.159** | 0.162 |
+| Degenerate ↓ | 0.1% | 1.6% | **1.2%** | 1.3% |
+| Short answers | 15.5% | 31.2% | 32.1% | **29.6%** |
+| Rare words | 9.0% | **7.1%** | 5.4% | 5.1% |
+| Out-of-vocabulary | 2.4% | **2.2%** | 2.1% | 1.2% |
+| Silence tokens | 12.2% | **8.9%** | 5.8% | 8.3% |
+| Marker gap ↓ | – | **0.044** | 0.049 | **0.044** |
+| Child loss ↓ | – | 2.035 | **2.003** | 2.010 |
+
+**Read 20 samples:** the most content-rich of the CPU runs ("and I play with the animals that are in the zoo.", "um. I put it in a bowl and I put it in a cup.", "I like pink ones."); no loops in the 20. Still many one-word replies.
+**Verdict: mixed → not improved (2 of 3).** The lower learning rate kept silence tokens and the marker gap where round 2 had them (fixing round 3's losses there), with lower loss and fewer short answers, but replies got slightly shorter and the vocabulary narrower.
+**Decision: stop the CPU rounds here** (DECISIONS D9). Four rounds moved loss 2.109 → ~2.00 but reply length never moved (~3.4 words vs 5.4 real). The 360M model looks like the limit. Round 2 stays the working 6-year-old; the real upgrade is Qwen2.5-1.5B on a GPU (`bash scripts/run_age6.sh`), which fixed reply length at age 5.

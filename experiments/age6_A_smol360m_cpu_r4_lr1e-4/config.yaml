@@ -1,0 +1,59 @@
+run_name: age6_A_smol360m_cpu_r4_lr1e-4
+hypothesis: 'Round 4: continuing the round-2 adapter (current best) on 3,200 unseen
+  age-6 examples at a lower learning rate (1e-4) keeps round 3''s lower loss without
+  losing silence tokens, rare words and child markers.'
+age_label: 6
+model:
+  name: HuggingFaceTB/SmolLM2-360M-Instruct
+  load_in_4bit: false
+  dtype: float32
+  adapter: experiments/age6_A_smol360m_cpu_r2/adapter
+  device_map: cpu
+data:
+  processed_dir: data/processed_all
+  bucket: age6
+  context_turns: 6
+  max_train_examples: 3200
+  max_val_examples: 200
+  sample_seed: 45
+  exclude_sample:
+  - n: 3200
+    seed: 42
+  - n: 3200
+    seed: 43
+  - n: 3200
+    seed: 44
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: all-linear
+train:
+  lr: 0.0001
+  epochs: 1
+  scheduler: cosine
+  warmup: 0.03
+  per_device_batch_size: 2
+  grad_accum: 8
+  max_length: 512
+  gradient_checkpointing: true
+  evals_per_epoch: 4
+  early_stopping_patience: 3
+  save_total_limit: 3
+  logging_steps: 10
+  seed: 42
+  num_workers: 0
+  eval_batch_size: 4
+eval:
+  split: val
+  max_examples: 300
+  sample_seed: 42
+  prompt_variant: default
+  temperature: 0.7
+  top_p: 0.9
+  max_new_tokens: 60
+  seed: 1234
+  batch_size: 16
+  max_length: 512
+  compute_loss: true
+  loss_batch_size: 2

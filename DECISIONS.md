@@ -16,6 +16,7 @@ YELLOW and RED decisions, with what / why / evidence. Newest first.
 
 **Outcome (2026-10-28):** trained. Beats both untrained SmolLM2 baselines on loss (2.109 vs 2.753), length KS (0.152 vs 0.186), degeneration (1.9% vs 5.5%) and diversity; worse on child markers (too many short "yeah." replies). Details in EXPERIMENT_LOG. Adapter: `experiments/age6_A_smol360m_cpu/adapter` (git-ignored, shared as a zip). Chat with it: `python scripts/chat_age6.py`.
 **Caveats:** smaller model (run 2 showed SmolLM2 is weaker than Qwen 1.5B: shorter, more generic replies) and 16% of the age-6 data. This is a working 6-year-old now, not the final one: the planned Qwen 1.5B runs A/B/C on a GPU should replace it.
+**Continued training (2026-10-30/31):** rounds 2-4 continued the adapter on 3,200 new (unseen) age-6 examples each (`data.exclude_sample`). Round 2 improved (loss 2.035) and is the working model. Rounds 3 and 4 were mixed (loss 2.003 / 2.010, but narrower vocabulary), and every round left reply length stuck at ~3.4 words vs 5.4 real (KS ~0.16). **Decision: stop the CPU rounds.** The small model looks like the limit (§9.4 step 8); the fix is the planned Qwen2.5-1.5B runs on a GPU (a §8 model, not a RED switch), which got age-5 reply length right (KS 0.031). 4 of the 6 phase runs used.
 **Data handling:** the CHILDES transcripts were uploaded by Samaree into this private Claude workspace for processing; nothing is committed or shared. Confirm with Dr. Dever that this fits the TalkBank ground rules and the IRB determination.
 
 ---
