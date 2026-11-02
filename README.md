@@ -49,3 +49,44 @@ and also works when Jupyter is launched from `notebooks/`.
 
 Outputs are written beneath `data/processed/` and `data/experiments/`; they are
 local artifacts and are not committed.
+
+## Transcript API
+
+The optional `backend/` service stores conversations and append-only transcript
+iterations in MongoDB. Each LLM interaction can be saved as a new iteration,
+and clients can retrieve either the latest reconstructed transcript or the
+transcript as of a specific iteration. The service stores messages after the
+LLM call; it does not invoke a model.
+
+Install and start a local MongoDB instance, then from the repository root run:
+
+```powershell
+python -m pip install -r backend\requirements.txt
+$env:MONGODB_URI = "mongodb://localhost:27017"
+$env:MONGODB_DATABASE = "simulearn"
+python -m uvicorn backend.app.main:app --reload
+```
+
+The API is available at `http://localhost:8000` and its interactive docs at
+`http://localhost:8000/docs`. Create a conversation with
+`POST /api/v1/conversations` using `{"owner_id":"learner-1","title":"Session"}`.
+Append an iteration with
+`POST /api/v1/conversations/{id}/iterations`, supplying the same `owner_id`
+and the interaction's `messages` array (for example, one user message and one
+assistant response). Fetch all iterations from
+`GET /api/v1/conversations/{id}/iterations?owner_id=learner-1`, or a
+reconstructed transcript from
+`GET /api/v1/conversations/{id}/transcript?owner_id=learner-1&version=1`.
+
+The `owner_id` must be derived from the application's authenticated user by a
+trusted caller; it is not an authentication mechanism. Do not expose this
+service publicly until it is connected to the app's authentication layer.
+Configure `MONGODB_URI` for a MongoDB deployment and keep credentials out of
+source control.
+
+Run backend tests with:
+
+```powershell
+python -m pip install -r backend\requirements-dev.txt
+python -m pytest backend\tests
+```
