@@ -1,0 +1,48 @@
+run_name: qwen1.5b_lora_gleason_adult
+hypothesis: "One epoch tests whether adult-target Gleason turns can be learned with the existing child-held-out LoRA workflow."
+model:
+  name: Qwen/Qwen2.5-1.5B-Instruct
+  load_in_4bit: true
+  dtype: float16
+  adapter: null
+data:
+  processed_dir: data/processed
+  bucket: gleason_adult
+  context_turns: 6
+  max_train_examples: null
+  max_val_examples: 1000
+  sample_seed: 42
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: all-linear
+train:
+  lr: 2.0e-4
+  epochs: 1
+  bf16: false
+  fp16: true
+  scheduler: cosine
+  warmup: 0.03
+  per_device_batch_size: 1
+  grad_accum: 16
+  max_length: 512
+  gradient_checkpointing: true
+  evals_per_epoch: 4
+  early_stopping_patience: 3
+  save_total_limit: 3
+  logging_steps: 10
+  seed: 42
+eval:
+  split: val
+  max_examples: 1000
+  sample_seed: 42
+  prompt_variant: default
+  temperature: 0.7
+  top_p: 0.9
+  max_new_tokens: 120
+  seed: 1234
+  batch_size: 1
+  max_length: 512
+  compute_loss: true
+  loss_batch_size: 1

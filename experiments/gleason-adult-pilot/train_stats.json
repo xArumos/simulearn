@@ -1,0 +1,39 @@
+{
+  "run_id": "gleason-adult-pilot",
+  "model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "quantization": "4-bit NF4 with double quantization",
+  "compute_dtype": "float16",
+  "lora": {
+    "rank": 16,
+    "alpha": 32,
+    "dropout": 0.05,
+    "target_modules": "all-linear",
+    "trainable_params": 18464768,
+    "total_params": 1562179072
+  },
+  "data": {
+    "train_examples": 10898,
+    "train_tokens": 1529331,
+    "train_target_tokens": 177656,
+    "validation_examples": 1000,
+    "validation_tokens": 125846,
+    "validation_target_tokens": 11632,
+    "test_examples": 1178,
+    "child_groups": {
+      "train": 20,
+      "validation": 2,
+      "test": 2
+    }
+  },
+  "training": {
+    "epochs": 1,
+    "optimizer_steps": 682,
+    "runtime_seconds": 18927.9,
+    "samples_per_second": 0.576,
+    "steps_per_second": 0.036,
+    "train_loss": 2.4401548447147494,
+    "peak_gpu_memory_gib": 3.19,
+    "best_checkpoint_step": 510,
+    "best_validation_loss": 2.307797431945801
+  }
+}

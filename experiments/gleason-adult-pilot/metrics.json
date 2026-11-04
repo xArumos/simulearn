@@ -1,0 +1,51 @@
+{
+  "run_id": "gleason-adult-pilot",
+  "model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "split": "validation",
+  "n_examples": 1000,
+  "target_loss": {
+    "loss": 2.5178953894558767,
+    "perplexity": 12.402466814213897,
+    "n_tokens": 11632
+  },
+  "length_ks": 0.07299999999999995,
+  "length_wasserstein": 0.6829999999999995,
+  "degeneration_rate": 0.001,
+  "reproducible": {
+    "n": 32,
+    "identical": true
+  },
+  "decoding": {
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "max_new_tokens": 120,
+    "seed": 1234,
+    "max_length": 512
+  },
+  "generated_aggregate_metrics": {
+    "mean_words": 7.631,
+    "median_words": 6.0,
+    "p90_words": 15.0,
+    "distinct_1": 0.09749705150045866,
+    "distinct_2": 0.49992459659176597,
+    "empty_rate": 0.0,
+    "loop_rate": 0.0,
+    "filler_rate": 0.14,
+    "short_answer_rate": 0.123,
+    "repetition_rate": 0.033,
+    "over_20_words_rate": 0.044
+  },
+  "reference_aggregate_metrics": {
+    "mean_words": 7.576,
+    "median_words": 6.0,
+    "p90_words": 16.0,
+    "distinct_1": 0.1449313621964097,
+    "distinct_2": 0.6581508515815085,
+    "empty_rate": 0.0,
+    "loop_rate": 0.001,
+    "filler_rate": 0.169,
+    "short_answer_rate": 0.144,
+    "repetition_rate": 0.069,
+    "over_20_words_rate": 0.068
+  }
+}
