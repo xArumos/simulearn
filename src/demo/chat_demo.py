@@ -6,7 +6,7 @@ You type the adult's lines and pick the child's age (one LoRA adapter per age bu
 configs/demo.yaml; ages without an adapter are hidden). Each model keeps its own conversation history,
 trimmed like in training: the last 6 turns including the new adult line. Same system prompt and decoding
 as evaluation (temperature 0.7, top-p 0.9, max 60 new tokens). <SILENCE FOR X SECONDS> is shown as a
-visible pause. Runs on the GPU in bf16, or on the CPU in fp32 (the hosted Space). Nothing is pre-filled:
+visible pause. Runs on the GPU in bf16 (locally, or ZeroGPU on the hosted Space), or on the CPU in fp32. Nothing is pre-filled:
 no CHILDES text is shipped in the demo.
 
 Optional environment variables: MONGODB_URI saves chats and 👍/👎 ratings (src/demo/store.py);
@@ -66,21 +66,25 @@ def render(text: str) -> str:
 
 
 class Demo:
-    def __init__(self, cfg: dict, adapters: dict[int, dict]):
+    def __init__(self, cfg: dict, adapters: dict[int, dict], device: str | None = None):
+        """device=None picks cuda if available. ZeroGPU passes "cuda" explicitly: its GPU only exists inside
+        @spaces.GPU calls, but the model must be moved to cuda at startup."""
         if not adapters:
             raise SystemExit("No adapters found. Check configs/demo.yaml (or --adapters-dir).")
         self.cfg, self.adapters = cfg, adapters
-        cuda = torch.cuda.is_available()
-        self.device = "cuda" if cuda else "cpu"
+        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+        cuda = self.device == "cuda"
         self.tok = load_tokenizer(cfg["base_model"])
-        base = load_model({"name": cfg["base_model"], "dtype": "bfloat16" if cuda else "float32", "device_map": self.device})
+        base = load_model({"name": cfg["base_model"], "dtype": "bfloat16" if cuda else "float32", "device_map": "cpu"})
         from peft import PeftModel
 
         ages = sorted(adapters)
-        self.model = PeftModel.from_pretrained(base, str(adapters[ages[0]]["path"]), adapter_name=f"age{ages[0]}")
+        self.model = PeftModel.from_pretrained(base, str(adapters[ages[0]]["path"]), adapter_name=f"age{ages[0]}", torch_device="cpu")
         for age in ages[1:]:
-            self.model.load_adapter(str(adapters[age]["path"]), adapter_name=f"age{age}")
-        self.model.eval()
+            self.model.load_adapter(str(adapters[age]["path"]), adapter_name=f"age{age}", torch_device="cpu")
+        # Everything is loaded on the CPU (torch_device="cpu", or PEFT picks cuda itself) and moved in one .to():
+        # ZeroGPU's startup cuda emulation can't read adapter files straight onto cuda ("No CUDA GPUs are available").
+        self.model.to(self.device).eval()
         self.lock = threading.Lock()  # set_adapter + generate must not interleave between users
         self.seed = 1234
 
@@ -102,7 +106,15 @@ class Demo:
         return self.tok.decode(out[0, ids["input_ids"].shape[1]:], skip_special_tokens=True).strip()
 
 
-def build_ui(demo: Demo, store: DemoStore):
+def timed(reply, request: tuple) -> tuple[str, float]:
+    t0 = time.time()
+    return reply(*request), time.time() - t0
+
+
+def build_ui(demo: Demo, store: DemoStore, reply_both=None):
+    """By default each column calls demo.reply separately, so the child's column can show first (the untrained one
+    is slow on a CPU). The Space passes reply_both(ft_request, base_request) -> ((text, secs), (text, secs)): one
+    @spaces.GPU call per turn, which uses less of each visitor's ZeroGPU quota (space/app.py)."""
     ages = sorted(demo.adapters)
     default_age = demo.cfg.get("default_age") if demo.cfg.get("default_age") in ages else ages[0]
     age_choices = [(f"{a} years old ({demo.adapters[a]['label']})", a) for a in ages]
@@ -126,15 +138,19 @@ def build_ui(demo: Demo, store: DemoStore):
                     "seed": seed, "gen_seconds": round(secs, 2), "device": demo.device}
             session["versions"][side].append(store.log_turn(session["conv"].get(side), owner, adult_line, reply, model, meta))
 
-        # The child reply comes first: it is short (~2-3 s on the CPU Space), while the untrained model
-        # often writes all 60 tokens (20-50 s on CPU), so its column fills in afterwards.
+        # The child reply comes first: it is short, while the untrained model often writes all 60 tokens
+        # (20-50 s on a CPU), so its column fills in afterwards.
         user_msg = {"role": "user", "content": adult_line}
         base_chat = base_chat + [user_msg]
         waiting = {"role": "assistant", "content": "*(writing…)*"}
         locked = gr.update(value="", interactive=False)  # no new line until both replies are in
-        t0 = time.time()
-        f = demo.reply(ft_raw, adult_line, age, system_prompt(age))
-        save("fine-tuned", f, f"age{age}:{demo.adapters[age]['path'].parent.name}", time.time() - t0)
+        ft_req = (ft_raw, adult_line, age, system_prompt(age))
+        base_req = (base_raw, adult_line, None, system_prompt(age, strong=strong_prompt))
+        if reply_both:
+            (f, f_secs), (b, b_secs) = reply_both(ft_req, base_req)
+        else:
+            f, f_secs = timed(demo.reply, ft_req)
+        save("fine-tuned", f, f"age{age}:{demo.adapters[age]['path'].parent.name}", f_secs)
         ft_raw = ft_raw + [user_msg, {"role": "assistant", "content": f}]
         ft_chat = ft_chat + [user_msg]
         m = SILENCE_RE.match(f)
@@ -143,9 +159,9 @@ def build_ui(demo: Demo, store: DemoStore):
             time.sleep(min(int(m.group(1)), 5))
         ft_chat = ft_chat + [{"role": "assistant", "content": render(f)}]
         yield locked, base_raw, ft_raw, base_chat + [waiting], ft_chat, session
-        t0 = time.time()
-        b = demo.reply(base_raw, adult_line, None, system_prompt(age, strong=strong_prompt))
-        save("untrained", b, demo.cfg["base_model"], time.time() - t0)
+        if not reply_both:
+            b, b_secs = timed(demo.reply, base_req)
+        save("untrained", b, demo.cfg["base_model"], b_secs)
         base_raw = base_raw + [user_msg, {"role": "assistant", "content": b}]
         yield gr.update(value="", interactive=True), base_raw, ft_raw, base_chat + [{"role": "assistant", "content": render(b)}], ft_chat, session
 

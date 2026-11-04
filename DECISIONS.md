@@ -4,7 +4,7 @@ YELLOW and RED decisions, with what / why / evidence. Newest first.
 
 ---
 
-## 2026-11-03 — D9 (RED, approved by Justin; pending Dr. Dever): Hosted team demo (D7-D8 are on the age6-bucket branch)
+## 2026-11-03 — D9 (RED, approved by Justin and by Dr. Dever): Hosted team demo (D7-D8 are on the age6-bucket branch)
 **What:** A browser demo for the team and advisors.
 - **App:** the existing Gradio side-by-side (`src/demo/chat_demo.py`), now with an age picker and 👍/👎 ratings, runs on a free Hugging Face Space (CPU).
 - **Adapters:** kept in a **private** HF model repo. The page is behind a shared password.
@@ -14,7 +14,7 @@ YELLOW and RED decisions, with what / why / evidence. Newest first.
 **Why:** Advisors need to try the model without installing anything, and the local demo only runs on Justin's PC.
 
 **Constraints and open items:**
-- **Dr. Dever must approve before anything is uploaded.** Two things need sign-off:
+- **Approved by Dr. Dever (reported by Justin, 2026-11-03).** The approval covers the demo as described here. The two items that needed sign-off were:
   - Hosting a CHILDES-derived adapter, even privately (CC BY-NC-SA). The adapter contains no transcript text, but it is a derivative.
   - Storing team test chats. They are team members testing a tool, not participants. **Educators or anyone outside the team must not use it until the IRB question is settled** (Protocol ET00056590 covers only CHILDES analysis).
 - No CHILDES text is shipped. `scripts/build_space.py` copies an explicit allowlist of code files and refuses data-like files (tested). `scripts/upload_adapters.sh` uploads only `adapter_*` files.
@@ -23,6 +23,10 @@ YELLOW and RED decisions, with what / why / evidence. Newest first.
 **Evidence:**
 - CPU timing with 2 threads, mimicking the Space's 2 vCPUs: fine-tuned reply ~2.5 s; untrained reply 22-49 s, because it writes all 60 tokens. Peak RAM 9.9 GB (the Space has 16 GB).
 - Change made because of this: the child reply is generated and shown first, and the untrained column fills in afterwards.
+
+**Update (2026-11-03): ZeroGPU instead of CPU basic.** HF now requires PRO to host Gradio Spaces on free cpu-basic (`create_repo` returned 402). Free accounts can host up to 2 ZeroGPU Spaces, so the Space runs on ZeroGPU: `space/app.py` wraps generation in `@spaces.GPU` and moves the model to cuda at startup; `Demo` takes an explicit `device`. torch is pinned to 2.13.0 on the Space (newest on ZeroGPU's supported list); training stays on 2.14.1. Trade-off: each visitor has a small daily GPU quota (~2 min unauthenticated). Checked locally on CPU (decorator is a no-op there): the built Space loads the adapter from the private repo and answers. Deployed 2026-11-03: two startup fixes were needed on ZeroGPU: (1) pin pydantic 2.12.5 (HF installs gradio[mcp]); (2) load the PEFT adapters on the CPU (`torch_device="cpu"`) before moving the model to cuda. The Space reaches RUNNING and the password gate returns 401 without login. Justin verified a real turn on ZeroGPU.
+
+**Update (2026-11-03): quota.** A teammate without an HF account could send only one message. Changes: both columns now come from **one** `@spaces.GPU(duration=15)` call per turn (`build_ui(..., reply_both=...)`; was two calls of 30 s), and the landing page asks testers to sign in to a free HF account (5 min/day instead of ~2) and links the huggingface.co Space page, since that page is what passes the visitor's HF login to ZeroGPU (our understanding; not verified with a second account). Not yet measured how many turns this allows. Pages is served from `justin/demo-hosting` `/docs` until the branch is merged to `main`.
 
 **Also:** an age-4 training run was started for the picker and then stopped by the user, because hosting comes first. The demo launches with age 5 only. Ages 4 and 6 appear automatically once their adapters exist.
 

@@ -2,6 +2,13 @@
 
 _Last updated: 2026-11-01 (session 2)_
 
+## Session 4 (2026-11-03) — moved to a second machine (native Linux, CachyOS)
+- Repo at `/home/justin/dev/simulearn`, venv `~/venvs/simulearn` (CPU-only torch; no NVIDIA GPU here, so no training on this machine). `scripts/env_wsl.sh` works unchanged on native Linux.
+- Age-5 adapter (run 3) is present here. 72 tests pass. `deploy_space.sh --dry-run` builds `build/space/` fine. Not logged in to HF yet.
+- Adapter uploaded: `xArumos/simulearn-adapters` (private; only age5/adapter_* files). Verified.
+- **HF policy blocker:** Gradio Spaces on free cpu-basic now need PRO (create returned 402). Space `xArumos/simulearn-demo` exists as private ZeroGPU (zero-a10g), variable ADAPTER_REPO set, no code yet. User chose ZeroGPU: demo ported (D9 update), 73 tests pass, built Space smoke-tested locally on CPU. Secrets HF_TOKEN + DEMO_PASSWORD set by user; deployed; Space RUNNING on ZeroGPU (private), password gate verified. User verified a real turn on ZeroGPU (2026-11-03). User made the Space public. Quota fix: one `@spaces.GPU(duration=15)` call per turn; landing page tells testers to sign in to a free HF account and links huggingface.co/spaces/xArumos/simulearn-demo. GitHub Pages enabled from `justin/demo-hosting` `/docs` (user OK'd). Next: have a signed-in teammate count how many turns they get. MongoDB Atlas later (saving is off until MONGODB_URI is set).
+- Dr. Dever approved the hosted demo (D9 updated). Remaining hosting steps are user-only (HF login onward; see "Waiting on user").
+
 ## Session 3 (2026-11-03) — hosted team demo (branch `justin/demo-hosting`)
 - Fetched all remote branches. Dante's MongoDB transcript API is on `main` (`backend/`), and I copied it here unchanged. No teammate frontend exists in the repo.
 - **Demo:**
@@ -66,10 +73,10 @@ From Claude's Windows shell: write a .sh to the scratchpad, then run `wsl.exe -d
 4. Rebuild the meeting notebook after any new result: `python scripts/build_meeting_notebook.py`.
 
 ## Waiting on user
-- **Hosted demo:** Dr. Dever's OK (D9), then the one-time setup in README "Team demo in the browser":
+- **Hosted demo:** Dr. Dever approved (D9, 2026-11-03). Remaining: the one-time setup in README "Team demo in the browser":
   - HF login, adapter upload, Space creation and secrets.
   - Atlas cluster.
-  - Replace `HF_USER` in `docs/index.html`, PR to `main`, enable Pages.
+  - Done: Space live and public (password-gated), Pages live. Remaining: PR `justin/demo-hosting` → `main` (then point Pages at `main`).
   - Ages 4 and 6 have no trained adapter yet (age 6: Samaree's). The picker shows only age 5 until they do.
 - **Blind ratings:** fill in `reports/phase1/review_ratings.csv` (28 items x 4 replies; 1-5 child-likeness, coherence, age-appropriateness). Each teammate can rate their own copy of the CSV. Don't open `review_key.json` until done. These files contain CHILDES text: local only, git-ignored.
 - Decide whether to spend runs 5-6 before or after the ratings.

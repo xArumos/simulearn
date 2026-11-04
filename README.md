@@ -17,10 +17,10 @@ The side-by-side chat demo (untrained Qwen vs our fine-tuned child model, one ad
 Without them, nothing is saved and there is no password. Stop the demo before training, because both together don't fit in 12 GB VRAM.
 
 **Hosted (one-time setup, done by you; never paste tokens or passwords into a chat or into git):**
-1. Get Dr. Dever's OK first (DECISIONS.md D9).
+1. Dr. Dever's OK: done 2026-11-03 (DECISIONS.md D9).
 2. **Hugging Face:** create an account, then in WSL run `hf auth login`.
 3. **Adapters:** run `bash scripts/upload_adapters.sh <hf-user>/simulearn-adapters`. This creates a **private** model repo with `age4/`, `age5/`, … and uploads only the adapter files.
-4. **Space:** on huggingface.co, create a Space `<hf-user>/simulearn-demo` (SDK: Gradio, hardware: CPU basic, free).
+4. **Space:** on huggingface.co, create a Space `<hf-user>/simulearn-demo` (SDK: Gradio, hardware: **ZeroGPU**). Free accounts can't host Gradio Spaces on CPU basic any more (it needs PRO), but they can host up to 2 ZeroGPU Spaces. Make it public: the `DEMO_PASSWORD` protects it, and advisors then don't need HF accounts.
 5. **Space settings:**
    - Variable `ADAPTER_REPO=<hf-user>/simulearn-adapters`.
    - Secret `HF_TOKEN`: a read-only token from huggingface.co/settings/tokens.
@@ -31,8 +31,8 @@ Without them, nothing is saved and there is no password. Stop the demo before tr
    - Under Network Access, allow `0.0.0.0/0` (Spaces have no fixed IP).
    - Copy the `mongodb+srv://…` connection string into the `MONGODB_URI` secret.
 7. **Deploy:** run `bash scripts/deploy_space.sh <hf-user>/simulearn-demo`. Re-run it after any change to the demo code. Add `--dry-run` to only build `build/space/` and see the file list.
-8. **GitHub Pages:**
-   - Replace `HF_USER` in `docs/index.html`.
+8. **GitHub Pages** (done 2026-11-03, served from `justin/demo-hosting` `/docs`; switch the source to `main` after merging):
+   - The demo link in `docs/index.html` points at `https://huggingface.co/spaces/<hf-user>/simulearn-demo` (not the `hf.space` address, so visitors' HF login counts for their ZeroGPU quota).
    - Merge to `main`.
    - In the repo's Settings → Pages, choose "Deploy from a branch", `main`, `/docs`.
 
@@ -41,7 +41,7 @@ Without them, nothing is saved and there is no password. Stop the demo before tr
 - `transcript_iterations` holds one per turn: the adult line and that side's reply, with the model, age, seed and timing in `metadata`.
 - `feedback` holds 👍/👎 ratings and notes, linked by `conversation_id` and `version`.
 
-**Speed on the free CPU Space:** the child reply takes ~2-3 s. The untrained model rambles to 60 tokens and takes ~20-50 s, so it fills in after the child reply. The first visit after the Space sleeps (48 h without use) takes a few minutes to wake up.
+**ZeroGPU limits:** a GPU is borrowed only while a reply is generated (`@spaces.GPU` in `space/app.py`). Each visitor has a daily GPU quota (about 2 min if not logged in to HF, 5 min with a free HF account). One reply uses a few seconds of it, so expect a few dozen turns per tester per day. The first visit after the Space sleeps (48 h without use) takes a few minutes to wake up.
 
 ## Adult-target Gleason pilot
 

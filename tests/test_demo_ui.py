@@ -62,3 +62,19 @@ def test_without_database_the_chat_still_works():
     *_, last = respond("hi", "", 5, [], [], [], [], False, False, {"id": None, "conv": {}, "versions": {"untrained": [], "fine-tuned": []}})
     assert last[4][-1]["content"].endswith("no") and last[5]["versions"]["fine-tuned"] == [None]
     assert isinstance(ui, gr.Blocks)
+
+
+def test_reply_both_makes_one_call_per_turn(monkeypatch):
+    # The Space passes reply_both (one @spaces.GPU call per turn, space/app.py); demo.reply must not be called.
+    monkeypatch.setattr("time.sleep", lambda s: None)
+    demo, calls = FakeDemo(), []
+
+    def reply_both(ft_req, base_req):
+        calls.append((ft_req[2], base_req[2]))
+        return ("<SILENCE FOR 2 SECONDS> no", 0.5), ("Hello there!", 1.5)
+
+    ui = build_ui(demo, DemoStore(mongomock.MongoClient().simulearn), reply_both=reply_both)
+    state = {"id": None, "conv": {}, "versions": {"untrained": [], "fine-tuned": []}}
+    steps = list(handler(ui, "respond")("hi", "tester", 5, [], [], [], [], False, True, state))
+    assert calls == [(5, None)] and demo.calls == []
+    assert steps[-1][3][-1]["content"] == "Hello there!" and "pauses 2 s" in steps[-1][4][-1]["content"]
