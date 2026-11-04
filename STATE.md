@@ -1,6 +1,28 @@
 # STATE.md — live session handoff
 
-_Last updated: 2026-10-15 (session 1)_
+_Last updated: 2026-11-01 (session 2)_
+
+## Session 3 (2026-11-03) — hosted team demo (branch `justin/demo-hosting`)
+- Fetched all remote branches. Dante's MongoDB transcript API is on `main` (`backend/`), and I copied it here unchanged. No teammate frontend exists in the repo.
+- **Demo:**
+  - `src/demo/chat_demo.py` now has an age picker (one adapter per age, from `configs/demo.yaml`) and runs on CPU or GPU.
+  - The child reply shows first, and the untrained column fills in afterwards.
+  - Tester name, 👍/👎 + note.
+  - The context window now matches training: 6 turns including the new adult line. Before, it was 7.
+- **Saving:** `src/demo/store.py` wraps Dante's `MongoTranscriptStore` and adds a `feedback` collection. It's a no-op without `MONGODB_URI`.
+- **Hosting:**
+  - `space/` + `scripts/build_space.py` (allowlist; refuses data files) + `scripts/deploy_space.sh` + `scripts/upload_adapters.sh` (private repo, adapter files only).
+  - `docs/index.html` is the GitHub Pages landing page. It uses a button, not an iframe: the password cookie can be blocked in iframes.
+  - README has the step-by-step guide. DECISIONS D9.
+- Tests: 72 pass (`tests` + `backend/tests`), including an end-to-end UI test with a fake model and mongomock.
+- Age-4 run `20261103-1936_qwen1.5b_lora_ep1_age4` (`configs/phase3/qwen1.5b_lora_ep1_age4.yaml`) was **stopped by the user at ~step 150 of ~2,160**, because hosting comes first. There's no adapter yet, so the demo shows age 5 only. The partial run folder is kept and does not count as a finished Phase 3 run.
+- **Flag for the team:** public branch `Dante7162-patch-1` contains `Gleason.zip` (likely raw CHILDES) plus executed notebooks. Ask Dante to delete that branch (TalkBank no-redistribution rule).
+
+## Session 2 (2026-10-31 / 11-01) — summit paper + HiPerGator prep
+- Helped revise the summit paper's "AI Development and Technical Approach" paragraph (text lives in the team's Google Doc, not here). **The paper states that QLoRA of Qwen2.5-7B has been run and compared, and that all runs were done on HiPerGator. Neither is true yet. Phase 2 must run before the final submission.**
+- The user now has HiPerGator access and wants **all** runs (Phase 0 baselines, Phase 1 LoRA runs 2/3/4, Phase 2 QLoRA) re-done there for a same-hardware comparison. Paused until the user says they're ready.
+- Created `configs/hpg/{phase0,phase1,phase2}/*.yaml` (9 files): copies of the local run configs with an `_hpg` run_name, plus 7B QLoRA smoke and full configs (based on run 3). Still to do: `scripts/env_hpg.sh` and `scripts/slurm/*.sbatch`. The core code needs no changes (paths are relative to the project root).
+- Liu & Fourtassi (2025, SemDial) supports "LLMs approximate child speech per utterance but diverge over multi-turn interaction (less diverse, over-aligned)". It does NOT support "adult-like". That claim comes from our own Phase 0 baselines.
 
 ## Current phase and step
 Phase 1 (LoRA): 4 of 6 runs done, nothing running. **Waiting on the user's blind ratings** of `reports/phase1/review_packet.md` (real vs strong baseline vs run 3 vs run 4). Phase 1 exit requires it.
@@ -44,9 +66,15 @@ From Claude's Windows shell: write a .sh to the scratchpad, then run `wsl.exe -d
 4. Rebuild the meeting notebook after any new result: `python scripts/build_meeting_notebook.py`.
 
 ## Waiting on user
+- **Hosted demo:** Dr. Dever's OK (D9), then the one-time setup in README "Team demo in the browser":
+  - HF login, adapter upload, Space creation and secrets.
+  - Atlas cluster.
+  - Replace `HF_USER` in `docs/index.html`, PR to `main`, enable Pages.
+  - Ages 4 and 6 have no trained adapter yet (age 6: Samaree's). The picker shows only age 5 until they do.
 - **Blind ratings:** fill in `reports/phase1/review_ratings.csv` (28 items x 4 replies; 1-5 child-likeness, coherence, age-appropriateness). Each teammate can rate their own copy of the CSV. Don't open `review_key.json` until done. These files contain CHILDES text: local only, git-ignored.
 - Decide whether to spend runs 5-6 before or after the ratings.
-- Non-blocking: Dr. Dever to confirm Cameron (Eng-AAE) and the HiPerGator allocation.
+- **HiPerGator go-ahead** (user said to wait). User-only steps: log in, clone, build the venv, copy `data/processed*/` to `/blue`, and provide the account/QOS + GPU partition for the sbatch scripts. Confirm with Dr. Dever that storing CHILDES data on HiPerGator is fine.
+- Non-blocking: Dr. Dever to confirm Cameron (Eng-AAE).
 
 ## Known issues
 - Test split is small for some corpora: Cameron has 3 age-5 children (0 in val); Warren has 0 in test; MacWhinney (Ross + Mark, one group) is all in train. Fine for an aggregate evaluation, but per-corpus test numbers would be noisy.

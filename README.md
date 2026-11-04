@@ -6,6 +6,43 @@ Status: setup in progress. See `STATE.md` for the current state and `CLAUDE.md` 
 
 Data: CHILDES (MacWhinney, B. (2000). *The CHILDES Project: Tools for Analyzing Talk*. 3rd ed. Lawrence Erlbaum.). The transcripts are CC BY-NC-SA and are **never** committed to this repo.
 
+## Team demo in the browser
+
+The side-by-side chat demo (untrained Qwen vs our fine-tuned child model, one adapter per age) is `src/demo/chat_demo.py`. It runs locally, or hosted on a free Hugging Face Space for advisors. GitHub Pages (`docs/index.html`) is only the landing page with instructions. It can't run a model, so it links to the Space.
+
+**Locally (GPU, inside WSL):** `bash scripts/demo.sh`, then open http://localhost:7860. Optional environment variables:
+- `MONGODB_URI` saves chats and ratings.
+- `DEMO_PASSWORD` adds a password.
+
+Without them, nothing is saved and there is no password. Stop the demo before training, because both together don't fit in 12 GB VRAM.
+
+**Hosted (one-time setup, done by you; never paste tokens or passwords into a chat or into git):**
+1. Get Dr. Dever's OK first (DECISIONS.md D9).
+2. **Hugging Face:** create an account, then in WSL run `hf auth login`.
+3. **Adapters:** run `bash scripts/upload_adapters.sh <hf-user>/simulearn-adapters`. This creates a **private** model repo with `age4/`, `age5/`, … and uploads only the adapter files.
+4. **Space:** on huggingface.co, create a Space `<hf-user>/simulearn-demo` (SDK: Gradio, hardware: CPU basic, free).
+5. **Space settings:**
+   - Variable `ADAPTER_REPO=<hf-user>/simulearn-adapters`.
+   - Secret `HF_TOKEN`: a read-only token from huggingface.co/settings/tokens.
+   - Secret `DEMO_PASSWORD`.
+   - Secret `MONGODB_URI`.
+6. **MongoDB Atlas:**
+   - Create a free M0 cluster and a database user.
+   - Under Network Access, allow `0.0.0.0/0` (Spaces have no fixed IP).
+   - Copy the `mongodb+srv://…` connection string into the `MONGODB_URI` secret.
+7. **Deploy:** run `bash scripts/deploy_space.sh <hf-user>/simulearn-demo`. Re-run it after any change to the demo code. Add `--dry-run` to only build `build/space/` and see the file list.
+8. **GitHub Pages:**
+   - Replace `HF_USER` in `docs/index.html`.
+   - Merge to `main`.
+   - In the repo's Settings → Pages, choose "Deploy from a branch", `main`, `/docs`.
+
+**What gets saved (MongoDB, database `simulearn`):**
+- `conversations` holds one per tester session and side (`untrained` / `fine-tuned`).
+- `transcript_iterations` holds one per turn: the adult line and that side's reply, with the model, age, seed and timing in `metadata`.
+- `feedback` holds 👍/👎 ratings and notes, linked by `conversation_id` and `version`.
+
+**Speed on the free CPU Space:** the child reply takes ~2-3 s. The untrained model rambles to 60 tokens and takes ~20-50 s, so it fills in after the child reply. The first visit after the Space sleeps (48 h without use) takes a few minutes to wake up.
+
 ## Adult-target Gleason pilot
 
 This separate pilot prepares SFT examples whose targets are turns from the adult roles in

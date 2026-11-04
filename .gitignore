@@ -34,3 +34,6 @@ reports/*.log
 # Notebook execution artifacts
 /notebooks/*_executed.ipynb
 **/.ipynb_checkpoints/
+
+# Assembled Hugging Face Space folder (scripts/build_space.py)
+build/

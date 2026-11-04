@@ -1,0 +1,21 @@
+# Live demo (src/demo/chat_demo.py) and the hosted Hugging Face Space (space/app.py).
+# Ages whose adapter folder is missing are left out of the age picker, so the demo works before every bucket is trained.
+# On the Space, adapters come from the private adapter repo as <repo>/age<N>/ (see scripts/upload_adapters.sh),
+# and `path` is ignored.
+base_model: Qwen/Qwen2.5-1.5B-Instruct
+default_age: 5
+context_turns: 6            # same as training (run 3)
+decoding:                   # same as evaluation (CLAUDE.md §9.1)
+  temperature: 0.7
+  top_p: 0.9
+  max_new_tokens: 60
+adapters:
+  4:
+    path: null              # not trained yet (a run was started 2026-11-03 and stopped early; see STATE.md)
+    label: 48-59 months
+  5:
+    path: experiments/20261016-0003_qwen1.5b_lora_ep1/adapter
+    label: run 3 (60-71 months)
+  6:
+    path: null              # Samaree's age-6 run (age6-bucket branch), not trained yet
+    label: age-6 bucket (72-83 months)

@@ -21,10 +21,7 @@ from src.eval.generate import generate_replies, target_loss
 from src.eval.metrics import compute_metrics, vocab_from_replies
 from src.utils.config import load_config, resolve
 from src.utils.modeling import load_model, load_tokenizer
-
-STRONG_PROMPT = ("You are a {age}-year-old child talking with a grown-up. Talk exactly like a real {age}-year-old: "
-                 "short and simple, often just a few words, sometimes 'um', 'yeah', 'no', or 'I don't know'. "
-                 "Never sound like an adult or an assistant. Only say what the child says.")
+from src.utils.prompts import STRONG_PROMPT  # noqa: F401  (re-exported for review_packet)
 
 
 def read_jsonl(path: Path) -> list[dict]:

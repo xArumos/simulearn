@@ -89,3 +89,8 @@ werkzeug==3.1.9
 xxhash==4.0.1
 yarl==1.25.1
 gradio==6.30.0  # live demo only (src/demo/chat_demo.py)
+pymongo==4.19.0  # demo chat saving (src/demo/store.py, backend/)
+dnspython==2.9.2
+mongomock==4.3.0  # tests only
+sentinels==1.1.1
+fastapi==0.143.2  # backend/ models (also pulled in by gradio)

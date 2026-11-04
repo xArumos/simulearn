@@ -4,6 +4,30 @@ YELLOW and RED decisions, with what / why / evidence. Newest first.
 
 ---
 
+## 2026-11-03 — D9 (RED, approved by Justin; pending Dr. Dever): Hosted team demo (D7-D8 are on the age6-bucket branch)
+**What:** A browser demo for the team and advisors.
+- **App:** the existing Gradio side-by-side (`src/demo/chat_demo.py`), now with an age picker and 👍/👎 ratings, runs on a free Hugging Face Space (CPU).
+- **Adapters:** kept in a **private** HF model repo. The page is behind a shared password.
+- **Saving:** chats and ratings go to MongoDB Atlas (free M0) through Dante's `MongoTranscriptStore` (`backend/app/main.py`, unchanged), plus a new `feedback` collection.
+- **Landing page:** GitHub Pages (`docs/index.html`) links advisors to the Space.
+
+**Why:** Advisors need to try the model without installing anything, and the local demo only runs on Justin's PC.
+
+**Constraints and open items:**
+- **Dr. Dever must approve before anything is uploaded.** Two things need sign-off:
+  - Hosting a CHILDES-derived adapter, even privately (CC BY-NC-SA). The adapter contains no transcript text, but it is a derivative.
+  - Storing team test chats. They are team members testing a tool, not participants. **Educators or anyone outside the team must not use it until the IRB question is settled** (Protocol ET00056590 covers only CHILDES analysis).
+- No CHILDES text is shipped. `scripts/build_space.py` copies an explicit allowlist of code files and refuses data-like files (tested). `scripts/upload_adapters.sh` uploads only `adapter_*` files.
+- Dante's REST routes are **not** exposed on the Space. They have no auth (`owner_id` comes from the client), so anyone could read chats.
+
+**Evidence:**
+- CPU timing with 2 threads, mimicking the Space's 2 vCPUs: fine-tuned reply ~2.5 s; untrained reply 22-49 s, because it writes all 60 tokens. Peak RAM 9.9 GB (the Space has 16 GB).
+- Change made because of this: the child reply is generated and shown first, and the untrained column fills in afterwards.
+
+**Also:** an age-4 training run was started for the picker and then stopped by the user, because hosting comes first. The demo launches with age 5 only. Ages 4 and 6 appear automatically once their adapters exist.
+
+---
+
 ## 2026-10-16 — D6 (YELLOW): Try a 10-turn context window (Phase 1 run 4)
 **What:** One experiment with `build.context_turns: 10` (grid value from §8) instead of 6. The data is built into a separate folder, `data/processed_ctx10/` (config `configs/data_ctx10.yaml`), so the default 6-turn data and its splits stay as they are. The splits are identical (same children, same seed), because only the context length changes.
 **Why:** Run 1's main weakness is generic "safe" replies ("I don't know" ~5x more than real children; distinct-2 0.64 vs 0.73), and some replies ignore the adult's last turn. **Hypothesis:** more context gives the model more to anchor a specific reply to.
