@@ -31,10 +31,9 @@ Without them, nothing is saved and there is no password. Stop the demo before tr
    - Under Network Access, allow `0.0.0.0/0` (Spaces have no fixed IP).
    - Copy the `mongodb+srv://…` connection string into the `MONGODB_URI` secret.
 7. **Deploy:** run `bash scripts/deploy_space.sh <hf-user>/simulearn-demo`. Re-run it after any change to the demo code. Add `--dry-run` to only build `build/space/` and see the file list.
-8. **GitHub Pages** (done 2026-11-03, served from `justin/demo-hosting` `/docs`; switch the source to `main` after merging):
+8. **GitHub Pages** (done; live at https://xarumos.github.io/simulearn/, served from `main` `/docs`):
    - The demo link in `docs/index.html` points at `https://huggingface.co/spaces/<hf-user>/simulearn-demo` (not the `hf.space` address, so visitors' HF login counts for their ZeroGPU quota).
-   - Merge to `main`.
-   - In the repo's Settings → Pages, choose "Deploy from a branch", `main`, `/docs`.
+   - Settings → Pages: "Deploy from a branch", `main`, `/docs`. Changes to `docs/index.html` go live once merged to `main`.
 
 **What gets saved (MongoDB, database `simulearn`):**
 - `conversations` holds one per tester session and side (`untrained` / `fine-tuned`).
