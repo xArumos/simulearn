@@ -1,0 +1,1244 @@
+[
+  {
+    "collection": "Eng-NA",
+    "name": "Bates",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Bates.html",
+    "age_text": "1;8 and 2;4",
+    "n_text": "27",
+    "media": "--",
+    "comments": "two sessions for each child",
+    "lo_months": 20,
+    "hi_months": 28,
+    "n_children": 27,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "BernsteinRatner",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Bernstein.html",
+    "age_text": "1;1-1;11",
+    "n_text": "9",
+    "media": "audio",
+    "comments": "play sessions and mother interviews",
+    "lo_months": 13,
+    "hi_months": 23,
+    "n_children": 9,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Bliss",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Bliss.html",
+    "age_text": "3-10",
+    "n_text": "8",
+    "media": "-",
+    "comments": "control participants",
+    "lo_months": 36,
+    "hi_months": 131,
+    "n_children": 8,
+    "est_in_range": {
+      "48-71": 2.0,
+      "60-71": 1.0,
+      "48-59": 1.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Bloom",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Bloom.html",
+    "age_text": "1;9-3;2",
+    "n_text": "3",
+    "media": "audio",
+    "comments": "large longitudinal study of one child and samples for two others",
+    "lo_months": 21,
+    "hi_months": 38,
+    "n_children": 3,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Bohannon",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Bohannon.html",
+    "age_text": "2;8 and 3;0",
+    "n_text": "2",
+    "media": "-",
+    "comments": "children interacting with different adults",
+    "lo_months": 32,
+    "hi_months": 36,
+    "n_children": 2,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Braunwald",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Braunwald.html",
+    "age_text": "1;0-6;0",
+    "n_text": "1",
+    "media": "audio",
+    "comments": "longitudinal study with audio and diary notes",
+    "lo_months": 12,
+    "hi_months": 72,
+    "n_children": 1,
+    "est_in_range": {
+      "48-71": 0.4,
+      "60-71": 0.2,
+      "48-59": 0.2
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Brent",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Brent.html",
+    "age_text": "0;6-1;0",
+    "n_text": "16",
+    "media": "audio",
+    "comments": "mothers speaking to preverbal infants, linked",
+    "lo_months": 6,
+    "hi_months": 12,
+    "n_children": 16,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Brown",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Brown.html",
+    "age_text": "1;6-5;1",
+    "n_text": "3",
+    "media": "-",
+    "comments": "classic study of Adam, Eve, and Sarah",
+    "lo_months": 18,
+    "hi_months": 61,
+    "n_children": 3,
+    "est_in_range": {
+      "48-71": 1.0,
+      "60-71": 0.1,
+      "48-59": 0.8
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "CAPIL",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/CAPIL.html",
+    "age_text": "5 and adult",
+    "n_text": "30, 30",
+    "media": "audio",
+    "comments": "development of inhalation",
+    "lo_months": 60,
+    "hi_months": 71,
+    "n_children": 60,
+    "est_in_range": {
+      "48-71": 60.0,
+      "60-71": 60.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Champaign",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Champaign.html",
+    "age_text": "1-3",
+    "n_text": "44",
+    "media": "--",
+    "comments": "longitudinal",
+    "lo_months": 12,
+    "hi_months": 47,
+    "n_children": 44,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Clark",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Clark.html",
+    "age_text": "2;2-3;2",
+    "n_text": "1",
+    "media": "-",
+    "comments": "transcripts with attention to disfluencies",
+    "lo_months": 26,
+    "hi_months": 38,
+    "n_children": 1,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Demetras - Trevor",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Demetras1.html",
+    "age_text": "2;0-3;11",
+    "n_text": "1",
+    "media": "-",
+    "comments": "father-son interactions",
+    "lo_months": 24,
+    "hi_months": 47,
+    "n_children": 1,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Demetras - Working",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Demetras2.html",
+    "age_text": "2;0-2;6",
+    "n_text": "3",
+    "media": "-",
+    "comments": "2 weeks of recording for each child",
+    "lo_months": 24,
+    "hi_months": 30,
+    "n_children": 3,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Early Headstart",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/EHS.html",
+    "age_text": "--",
+    "n_text": "--",
+    "media": "video",
+    "comments": "three situation",
+    "lo_months": null,
+    "hi_months": null,
+    "n_children": null,
+    "est_in_range": {}
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "EllisWeismer",
+    "page_url": "https://talkbank.org/childes/access/Clinical-Eng/EllisWeismer.html",
+    "age_text": "2;6, 3;6, 4;6, 5;6",
+    "n_text": "138",
+    "media": "audio",
+    "comments": "late talkers and controls",
+    "lo_months": 30,
+    "hi_months": 66,
+    "n_children": 138,
+    "est_in_range": {
+      "48-71": 70.9,
+      "60-71": 26.1,
+      "48-59": 44.8
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Evans",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Evans.html",
+    "age_text": "2;1-2;9",
+    "n_text": "44",
+    "media": "-",
+    "comments": "dyads, each with one high verbal and one low verbal child",
+    "lo_months": 25,
+    "hi_months": 33,
+    "n_children": 44,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Feldman (Andrea)",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Feldman.html",
+    "age_text": "1;2-2;3",
+    "n_text": "1",
+    "media": "-",
+    "comments": "case study",
+    "lo_months": 14,
+    "hi_months": 27,
+    "n_children": 1,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Garvey",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Garvey.html",
+    "age_text": "2;10-5;7",
+    "n_text": "46",
+    "media": "-",
+    "comments": "dyadic school dialogs",
+    "lo_months": 34,
+    "hi_months": 67,
+    "n_children": 46,
+    "est_in_range": {
+      "48-71": 27.1,
+      "60-71": 10.8,
+      "48-59": 16.2
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Gathercole",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Gathercole.html",
+    "age_text": "2;10-5;7",
+    "n_text": "8",
+    "media": "-",
+    "comments": "lunchtime dialogs",
+    "lo_months": 34,
+    "hi_months": 67,
+    "n_children": 8,
+    "est_in_range": {
+      "48-71": 4.7,
+      "60-71": 1.9,
+      "48-59": 2.8
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Gelman",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Gelman.html",
+    "age_text": "1;6-7;0",
+    "n_text": "46, 72, 72, and 36",
+    "media": "-",
+    "comments": "mothers telling stories, picture descriptions",
+    "lo_months": 18,
+    "hi_months": 84,
+    "n_children": 226,
+    "est_in_range": {
+      "48-71": 81.0,
+      "60-71": 40.5,
+      "48-59": 40.5
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Gillam",
+    "page_url": "https://talkbank.org/childes/access/Clinical-Eng/Gillam.html",
+    "age_text": "5-12",
+    "n_text": "250 disordered, 520 controls",
+    "media": "-",
+    "comments": "free story telling",
+    "lo_months": 60,
+    "hi_months": 155,
+    "n_children": 770,
+    "est_in_range": {
+      "48-71": 96.2,
+      "60-71": 96.2,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Gleason",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Gleason.html",
+    "age_text": "2;1-5;2",
+    "n_text": "48",
+    "media": "audio",
+    "comments": "mother-child, father-child, and dinner, linked",
+    "lo_months": 25,
+    "hi_months": 62,
+    "n_children": 48,
+    "est_in_range": {
+      "48-71": 18.9,
+      "60-71": 3.8,
+      "48-59": 15.2
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Haggerty",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Haggerty.html",
+    "age_text": "2;6",
+    "n_text": "1",
+    "media": "-",
+    "comments": "one child in one day",
+    "lo_months": 30,
+    "hi_months": 30,
+    "n_children": 1,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Hall",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Hall.html",
+    "age_text": "4;6-5;0",
+    "n_text": "39",
+    "media": "audio",
+    "comments": "White/Black; working/professional",
+    "lo_months": 54,
+    "hi_months": 60,
+    "n_children": 39,
+    "est_in_range": {
+      "48-71": 39.0,
+      "60-71": 5.6,
+      "48-59": 33.4
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Higginson",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Higginson.html",
+    "age_text": "0;11-2;11",
+    "n_text": "3",
+    "media": "-",
+    "comments": "play sessions",
+    "lo_months": 11,
+    "hi_months": 35,
+    "n_children": 3,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "HSLLD",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/HSLLD.html",
+    "age_text": "2-6",
+    "n_text": "83",
+    "media": "audio",
+    "comments": "Harvard home-school project",
+    "lo_months": 24,
+    "hi_months": 83,
+    "n_children": 83,
+    "est_in_range": {
+      "48-71": 33.2,
+      "60-71": 16.6,
+      "48-59": 16.6
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Kuczaj",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Kuczaj.html",
+    "age_text": "2;4-4;1",
+    "n_text": "1",
+    "media": "-",
+    "comments": "longitudinal study",
+    "lo_months": 28,
+    "hi_months": 49,
+    "n_children": 1,
+    "est_in_range": {
+      "48-71": 0.1,
+      "60-71": 0.0,
+      "48-59": 0.1
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Lego",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Lego.html",
+    "age_text": "2-3",
+    "n_text": "16",
+    "media": "video",
+    "comments": "in home",
+    "lo_months": 24,
+    "hi_months": 47,
+    "n_children": 16,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "MacWhinney",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/MacWhinney.html",
+    "age_text": "0;7-8;0",
+    "n_text": "2",
+    "media": "audio",
+    "comments": "two brothers in natural situations, linked",
+    "lo_months": 7,
+    "hi_months": 96,
+    "n_children": 2,
+    "est_in_range": {
+      "48-71": 0.5,
+      "60-71": 0.3,
+      "48-59": 0.3
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "McCune",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/McCune.html",
+    "age_text": "1-3",
+    "n_text": "9",
+    "media": "video",
+    "comments": "work in progress, linked",
+    "lo_months": 12,
+    "hi_months": 47,
+    "n_children": 9,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "McMillan",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/McMillan.html",
+    "age_text": "3;0",
+    "n_text": "2",
+    "media": "video",
+    "comments": "small book reading samples, linked",
+    "lo_months": 36,
+    "hi_months": 36,
+    "n_children": 2,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Morisset",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Morisset.html",
+    "age_text": "2;6",
+    "n_text": "206",
+    "media": "-",
+    "comments": "children of welfare mothers at three sites",
+    "lo_months": 30,
+    "hi_months": 30,
+    "n_children": 206,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Nadig",
+    "page_url": "https://talkbank.org/asd/access/English/Nadig.html",
+    "age_text": "3-7",
+    "n_text": "12 English, 8 French",
+    "media": "-",
+    "comments": "control children",
+    "lo_months": 36,
+    "hi_months": 95,
+    "n_children": 20,
+    "est_in_range": {
+      "48-71": 8.0,
+      "60-71": 4.0,
+      "48-59": 4.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Nelson",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Nelson.html",
+    "age_text": "1;9-3;0",
+    "n_text": "1",
+    "media": "audio",
+    "comments": "bedtime monologues, linked",
+    "lo_months": 21,
+    "hi_months": 36,
+    "n_children": 1,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "New England",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/NewEngland.html",
+    "age_text": "1;2, 1;8, 2;3",
+    "n_text": "52",
+    "media": "audio",
+    "comments": "lab sessions with three activities",
+    "lo_months": 14,
+    "hi_months": 27,
+    "n_children": 52,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "NewmanRatner",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/NewmanRatner.html",
+    "age_text": "0;7-2;0",
+    "n_text": "121",
+    "media": "audio",
+    "comments": "home visits",
+    "lo_months": 7,
+    "hi_months": 24,
+    "n_children": 121,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Nicholas-TD",
+    "page_url": "https://talkbank.org/childes/access/Clinical-Eng/Nicholas/TD.html",
+    "age_text": "1;0-4;0",
+    "n_text": "45",
+    "media": "-",
+    "comments": "controls",
+    "lo_months": 12,
+    "hi_months": 48,
+    "n_children": 45,
+    "est_in_range": {
+      "48-71": 1.2,
+      "60-71": 0.0,
+      "48-59": 1.2
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Nicolopoulou",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Nicolopoulou.html",
+    "age_text": "3;1-5;9",
+    "n_text": "49",
+    "media": "-",
+    "comments": "free storytelling, longitudinal",
+    "lo_months": 37,
+    "hi_months": 69,
+    "n_children": 49,
+    "est_in_range": {
+      "48-71": 32.7,
+      "60-71": 14.8,
+      "48-59": 17.8
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Nippold",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Nippold.html",
+    "age_text": "6-11",
+    "n_text": "34",
+    "media": "audio",
+    "comments": "chess players",
+    "lo_months": 72,
+    "hi_months": 143,
+    "n_children": 34,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "OCSC",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/OCSC.html",
+    "age_text": "4-9",
+    "n_text": "303",
+    "media": "audio",
+    "comments": "interview tasks",
+    "lo_months": 48,
+    "hi_months": 119,
+    "n_children": 303,
+    "est_in_range": {
+      "48-71": 101.0,
+      "60-71": 50.5,
+      "48-59": 50.5
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Peters/Wilson",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Peters.html",
+    "age_text": "1;7-4;1",
+    "n_text": "1",
+    "media": "audio",
+    "comments": "father and his visually-impaired son",
+    "lo_months": 19,
+    "hi_months": 49,
+    "n_children": 1,
+    "est_in_range": {
+      "48-71": 0.1,
+      "60-71": 0.0,
+      "48-59": 0.1
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "POLER-Controls",
+    "page_url": "https://talkbank.org/childes/access/Clinical-Eng/POLER.html",
+    "age_text": "5-12",
+    "n_text": "26 controls",
+    "media": "audio",
+    "comments": "children with epilepsy and controls, linked",
+    "lo_months": 60,
+    "hi_months": 155,
+    "n_children": 26,
+    "est_in_range": {
+      "48-71": 3.2,
+      "60-71": 3.2,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Post",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Post.html",
+    "age_text": "1;7-2;8",
+    "n_text": "3",
+    "media": "-",
+    "comments": "free play in children's homes",
+    "lo_months": 19,
+    "hi_months": 32,
+    "n_children": 3,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Rollins",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Rollins.html",
+    "age_text": "6, 9, 12 months",
+    "n_text": "12",
+    "media": "video",
+    "comments": "play sessions",
+    "lo_months": 6,
+    "hi_months": 12,
+    "n_children": 12,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Rondal-TD",
+    "page_url": "https://talkbank.org/childes/access/Clinical-Eng/Rondal/TD.html",
+    "age_text": "3-12",
+    "n_text": "21",
+    "media": "-",
+    "comments": "normal controls",
+    "lo_months": 36,
+    "hi_months": 155,
+    "n_children": 21,
+    "est_in_range": {
+      "48-71": 4.2,
+      "60-71": 2.1,
+      "48-59": 2.1
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Rowe",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Rowe.html",
+    "age_text": "10,12,14,16,18",
+    "n_text": "47",
+    "media": "audio",
+    "comments": "longitudinal study",
+    "lo_months": 120,
+    "hi_months": 227,
+    "n_children": 47,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Sachs",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Sachs.html",
+    "age_text": "1;1-5;1",
+    "n_text": "1",
+    "media": "audio",
+    "comments": "longitudinal study, linked",
+    "lo_months": 13,
+    "hi_months": 61,
+    "n_children": 1,
+    "est_in_range": {
+      "48-71": 0.3,
+      "60-71": 0.0,
+      "48-59": 0.2
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Sawyer",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Sawyer.html",
+    "age_text": "3;6-4;11",
+    "n_text": "20",
+    "media": "audio",
+    "comments": "group conversations in daycare, linked",
+    "lo_months": 42,
+    "hi_months": 59,
+    "n_children": 20,
+    "est_in_range": {
+      "48-71": 13.3,
+      "60-71": 0.0,
+      "48-59": 13.3
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Snow",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Snow.html",
+    "age_text": "2;3-3;9",
+    "n_text": "1",
+    "media": "audio",
+    "comments": "longitudinal study with lots of book reading, linked",
+    "lo_months": 27,
+    "hi_months": 45,
+    "n_children": 1,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Soderstrom",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Soderstrom.html",
+    "age_text": "0;6-1;0",
+    "n_text": "2",
+    "media": "audio",
+    "comments": "mothers with their preverbal children, linked",
+    "lo_months": 6,
+    "hi_months": 12,
+    "n_children": 2,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Sprott",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Sprott.html",
+    "age_text": "4-6",
+    "n_text": "12",
+    "media": "audio",
+    "comments": "in progress",
+    "lo_months": 48,
+    "hi_months": 83,
+    "n_children": 12,
+    "est_in_range": {
+      "48-71": 8.0,
+      "60-71": 4.0,
+      "48-59": 4.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "StoopsMontag",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/StoopsMontag.html",
+    "age_text": "2;3-3;1",
+    "n_text": "12",
+    "media": "audio",
+    "comments": "book reading",
+    "lo_months": 27,
+    "hi_months": 37,
+    "n_children": 12,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Suppes",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Suppes.html",
+    "age_text": "1;11-3;3",
+    "n_text": "1",
+    "media": "-",
+    "comments": "case study",
+    "lo_months": 23,
+    "hi_months": 39,
+    "n_children": 1,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Tardif",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Tardif.html",
+    "age_text": "1;6-1;9",
+    "n_text": "24",
+    "media": "-",
+    "comments": "cross-sectional, free play and book",
+    "lo_months": 18,
+    "hi_months": 21,
+    "n_children": 24,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Valian",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Valian.html",
+    "age_text": "1;9-2;8",
+    "n_text": "21",
+    "media": "-",
+    "comments": "comparing English and Italian subject deletion",
+    "lo_months": 21,
+    "hi_months": 32,
+    "n_children": 21,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Van Houten",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/VanHouten.html",
+    "age_text": "at 2;0 and then at 3;0",
+    "n_text": "28",
+    "media": "audio",
+    "comments": "adolescent vs older mothers, 3 situations",
+    "lo_months": 24,
+    "hi_months": 36,
+    "n_children": 28,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Van Kleeck",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/VanKleeck.html",
+    "age_text": "3;0-4;0",
+    "n_text": "20",
+    "media": "-",
+    "comments": "two half-hour sessions",
+    "lo_months": 36,
+    "hi_months": 48,
+    "n_children": 20,
+    "est_in_range": {
+      "48-71": 1.5,
+      "60-71": 0.0,
+      "48-59": 1.5
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Warren-Leubecker",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Warren.html",
+    "age_text": "1;6-3;1 and 4;6-6;2",
+    "n_text": "10 and 10",
+    "media": "-",
+    "comments": "parent-child",
+    "lo_months": 18,
+    "hi_months": 74,
+    "n_children": 20,
+    "est_in_range": {
+      "48-71": 8.4,
+      "60-71": 4.2,
+      "48-59": 4.2
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Weist",
+    "page_url": "https://talkbank.org/childes/access/Eng-NA/Weist.html",
+    "age_text": "2;1-5;0",
+    "n_text": "6",
+    "media": "audio",
+    "comments": "aspect learning",
+    "lo_months": 25,
+    "hi_months": 60,
+    "n_children": 6,
+    "est_in_range": {
+      "48-71": 2.2,
+      "60-71": 0.2,
+      "48-59": 2.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "ComptonPater",
+    "page_url": "https://talkbank.org/phon/access/Eng-NA/ComptonPater.html",
+    "age_text": "0;8-3;3",
+    "n_text": "4",
+    "media": "-",
+    "comments": "in PhonBank",
+    "lo_months": 8,
+    "hi_months": 39,
+    "n_children": 4,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Davis",
+    "page_url": "https://talkbank.org/phon/access/Eng-NA/Davis.html",
+    "age_text": "0;7-2;4",
+    "n_text": "21",
+    "media": "audio",
+    "comments": "in PhonBank",
+    "lo_months": 7,
+    "hi_months": 28,
+    "n_children": 21,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Goad",
+    "page_url": "https://talkbank.org/phon/access/Eng-NA/Goad.html",
+    "age_text": "1;5-3;6",
+    "n_text": "2",
+    "media": "audio",
+    "comments": "in PhonBank",
+    "lo_months": 17,
+    "hi_months": 42,
+    "n_children": 2,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Inkelas",
+    "page_url": "https://talkbank.org/phon/access/Eng-NA/Inkelas.html",
+    "age_text": "0;6-4;0",
+    "n_text": "1",
+    "media": "-",
+    "comments": "in PhonBank",
+    "lo_months": 6,
+    "hi_months": 48,
+    "n_children": 1,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Menn",
+    "page_url": "https://talkbank.org/phon/access/Eng-NA/Menn.html",
+    "age_text": "0;6-4;0",
+    "n_text": "1",
+    "media": "audio",
+    "comments": "in PhonBank",
+    "lo_months": 6,
+    "hi_months": 48,
+    "n_children": 1,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Paidologos-English",
+    "page_url": "https://talkbank.org/phon/access/Eng-NA/PaidoEnglish.html",
+    "age_text": "2;0-5;0",
+    "n_text": "81",
+    "media": "audio",
+    "comments": "in PhonBank",
+    "lo_months": 24,
+    "hi_months": 60,
+    "n_children": 81,
+    "est_in_range": {
+      "48-71": 28.5,
+      "60-71": 2.2,
+      "48-59": 26.3
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Providence",
+    "page_url": "https://talkbank.org/phon/access/Eng-NA/Providence.html",
+    "age_text": "1-3",
+    "n_text": "6",
+    "media": "video",
+    "comments": "in PhonBank",
+    "lo_months": 12,
+    "hi_months": 47,
+    "n_children": 6,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Stanford-English",
+    "page_url": "https://talkbank.org/phon/access/Eng-NA/StanfordEnglish.html",
+    "age_text": "0;8-1;4",
+    "n_text": "5",
+    "media": "coming",
+    "comments": "in PhonBank",
+    "lo_months": 8,
+    "hi_months": 16,
+    "n_children": 5,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Narrative",
+    "page_url": "https://talkbank.org/childes/access/Clinical-Eng/Feldman/Narrative.html",
+    "age_text": "1;6-3;6",
+    "n_text": "18 focal and 10 control",
+    "media": "-",
+    "comments": "narratives from children with focal lesions and controls",
+    "lo_months": 18,
+    "hi_months": 42,
+    "n_children": 28,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Parent-Child",
+    "page_url": "https://talkbank.org/childes/access/Clinical-Eng/Feldman/ParentChild.html",
+    "age_text": "1;6-3;6",
+    "n_text": "56 focal and 50 control",
+    "media": "-",
+    "comments": "children with focal lesions and controls",
+    "lo_months": 18,
+    "hi_months": 42,
+    "n_children": 106,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-NA",
+    "name": "Twins",
+    "page_url": "https://talkbank.org/childes/access/Clinical-Eng/Feldman/Twins.html",
+    "age_text": "1;6-3;6",
+    "n_text": "2 twin pairs",
+    "media": "-",
+    "comments": "children with focal lesions and twin controls",
+    "lo_months": 18,
+    "hi_months": 42,
+    "n_children": 2,
+    "est_in_range": {
+      "48-71": 0.0,
+      "60-71": 0.0,
+      "48-59": 0.0
+    }
+  },
+  {
+    "collection": "Eng-AAE",
+    "name": "Barriere",
+    "page_url": "https://talkbank.org/childes/access/Eng-AAE/Barriere.html",
+    "age_text": "-",
+    "n_text": "12",
+    "media": "-",
+    "comments": "children with degrees of AAE",
+    "lo_months": null,
+    "hi_months": null,
+    "n_children": 12,
+    "est_in_range": {}
+  },
+  {
+    "collection": "Eng-AAE",
+    "name": "Cameron",
+    "page_url": "https://talkbank.org/childes/access/Eng-AAE/Cameron.html",
+    "age_text": "4-5",
+    "n_text": "44",
+    "media": "audio",
+    "comments": "child speakers of AAE and SAE",
+    "lo_months": 48,
+    "hi_months": 71,
+    "n_children": 44,
+    "est_in_range": {
+      "48-71": 44.0,
+      "60-71": 22.0,
+      "48-59": 22.0
+    }
+  },
+  {
+    "collection": "Eng-AAE",
+    "name": "DELV",
+    "page_url": "https://talkbank.org/childes/access/Eng-AAE/DELV.html",
+    "age_text": "-",
+    "n_text": "72",
+    "media": "-",
+    "comments": "single samples",
+    "lo_months": null,
+    "hi_months": null,
+    "n_children": 72,
+    "est_in_range": {}
+  },
+  {
+    "collection": "Eng-AAE",
+    "name": "DSLT",
+    "page_url": "https://talkbank.org/childes/access/Eng-AAE/DSLT.html",
+    "age_text": "-",
+    "n_text": "-",
+    "media": "-",
+    "comments": "-",
+    "lo_months": null,
+    "hi_months": null,
+    "n_children": null,
+    "est_in_range": {}
+  }
+]

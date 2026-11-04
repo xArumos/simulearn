@@ -1,0 +1,9 @@
+zip_path: data/raw/Gleason.zip
+processed_dir: data/processed
+output_name: gleason_adult
+context_turns: 6
+system_prompt: "You are an adult conversation partner speaking with a young child. Respond naturally as the adult."
+
+split:
+  fractions: [0.8, 0.1, 0.1]
+  seed: 42

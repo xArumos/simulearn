@@ -1,0 +1,5 @@
+# Scripts run inside WSL/Linux (and later HiPerGator): keep LF line endings even on Windows checkouts.
+*.sh   text eol=lf
+*.py   text eol=lf
+*.yaml text eol=lf
+*.md   text eol=lf
