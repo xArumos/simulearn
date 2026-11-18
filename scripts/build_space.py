@@ -29,6 +29,7 @@ FILES = [
     ("src/utils/prompts.py", "src/utils/prompts.py"),
     ("backend/__init__.py", "backend/__init__.py"),
     ("backend/app/__init__.py", "backend/app/__init__.py"),
+    ("backend/app/env.py", "backend/app/env.py"),
     ("backend/app/main.py", "backend/app/main.py"),
 ]
 FORBIDDEN_SUFFIXES = {".cha", ".jsonl", ".zip", ".safetensors", ".bin", ".csv"}

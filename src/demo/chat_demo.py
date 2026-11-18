@@ -10,7 +10,8 @@ visible pause. Runs on the GPU in bf16 (locally, or ZeroGPU on the hosted Space)
 no CHILDES text is shipped in the demo.
 
 Optional environment variables: MONGODB_URI saves chats and 👍/👎 ratings (src/demo/store.py);
-DEMO_PASSWORD puts a password on the page (any username).
+DEMO_PASSWORD puts a password on the page (any username). When run with main(), they are also read from the
+repo's git-ignored .env (template: .env.example; local MongoDB: docker-compose.yml).
 """
 from __future__ import annotations
 
@@ -24,6 +25,7 @@ from pathlib import Path
 import gradio as gr
 import torch
 
+from backend.app.env import load_env_file
 from src.demo.store import DemoStore, new_session_id
 from src.utils.config import load_config, resolve
 from src.utils.modeling import load_model, load_tokenizer
@@ -237,6 +239,7 @@ def main() -> None:
     ap.add_argument("--port", type=int, default=7860)
     ap.add_argument("--selftest", action="store_true", help="run two invented lines through each model and exit")
     a = ap.parse_args()
+    load_env_file()  # MONGODB_URI / MONGODB_DATABASE / DEMO_PASSWORD from the repo's .env; shell variables win
     cfg = load_config(resolve(a.config))
     demo = Demo(cfg, find_adapters(cfg, a.adapters_dir))
     if a.selftest:
