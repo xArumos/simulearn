@@ -1,0 +1,63 @@
+name: Task
+description: One piece of work that fits in a single PR (a person or a Claude agent can pick it up).
+labels: ["agent-ready"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This repo is **public**. Never paste CHILDES transcript text, model outputs quoting it, tokens or passwords here.
+        Too big for one PR? Split it into several tasks and link them under "Depends on".
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What should be true when this is done, and why it matters. Plain language.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Checkable items. A reviewer (or agent) uses these to decide "done".
+      value: |
+        - [ ] 
+        - [ ] Tests added or updated; `python -m pytest -q tests backend/tests` passes
+    validations:
+      required: true
+  - type: textarea
+    id: files
+    attributes:
+      label: Likely files
+      description: Where the work probably happens (helps agents start fast and avoid clashing with each other).
+      placeholder: src/eval/metrics.py, tests/test_metrics.py
+  - type: input
+    id: depends
+    attributes:
+      label: Depends on
+      description: Issues that must be closed first, e.g. "#12, #14". Leave empty if none.
+  - type: dropdown
+    id: autonomy
+    attributes:
+      label: Autonomy level (CLAUDE.md §3)
+      options:
+        - GREEN - just do it
+        - YELLOW - do it, but log a DECISIONS.md entry
+        - RED - needs a human decision or login first
+    validations:
+      required: true
+  - type: dropdown
+    id: size
+    attributes:
+      label: Size
+      options:
+        - S - an hour or less
+        - M - a few hours
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Data check
+      options:
+        - label: This issue contains no CHILDES text, tokens or passwords.
+          required: true
