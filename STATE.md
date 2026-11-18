@@ -1,6 +1,12 @@
 # STATE.md — live session handoff
 
-_Last updated: 2026-11-01 (session 2)_
+_Last updated: 2026-11-18 (session 6)_
+
+**Active work is tracked in GitHub Issues** (https://github.com/xArumos/simulearn/issues). This file is the handoff summary; `/sync-issues` keeps it current. Workflow: `CONTRIBUTING.md`, CLAUDE.md §14.
+
+## Session 6 (2026-11-18): issue-driven workflow
+- Added `CONTRIBUTING.md`, issue/PR templates, CI (`.github/workflows/tests.yml` + `requirements-ci.txt`, CPU-only; 75 tests pass in a fresh venv), workflow labels, and `.claude/` (agent `issue-worker`; skills `/plan-issues`, `/work-issue`, `/sync-issues`; project permissions). CLAUDE.md §14.
+- Next: turn "Next planned actions" and "Waiting on user" below into issues with `/plan-issues`.
 
 ## Session 5 (2026-11-03) — everything merged into `main`
 - Branch `justin/merge-to-main` (from `main`): merges Dante's PR #4 (`integrate/child-llm-main`: our Phase 1 snapshot + Gleason adult-target pilot), fixes its `warmup_ratio` bug (transformers 5.20 has no such argument; `warmup_steps` < 1 is a fraction), then applies our hosted-demo and ZeroGPU commits. README combines our guide, Dante's Gleason section, main's notebook workflow and Transcript API; `.gitignore` is the union. 75 tests pass.
@@ -67,6 +73,8 @@ Phase 1 (LoRA): 4 of 6 runs done, nothing running. **Waiting on the user's blind
   - The §4 fallback is NOT needed (both buckets far above 5,000).
 
 ## How to run things
+Native Linux (current machine, no GPU): `source ~/venvs/simulearn/bin/activate` in the repo, then e.g. `python -m pytest -q tests backend/tests`.
+Old Windows/WSL machine (GPU):
 Inside WSL: `source /mnt/c/Users/justin/dev/simulearn-testing/scripts/env_wsl.sh`, then e.g. `python -m src.data.preprocess`, `python -m pytest -q tests`.
 From Claude's Windows shell: write a .sh to the scratchpad, then run `wsl.exe -d Ubuntu -- bash /mnt/c/.../that.sh` (with `MSYS_NO_PATHCONV=1`).
 

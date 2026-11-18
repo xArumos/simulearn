@@ -238,7 +238,7 @@ Keep `STATE.md` updated at every meaningful step, and always before ending a ses
 - **Current phase and step**
 - **Done so far** (short list)
 - **Best model so far** (run_id, key metrics)
-- **Next planned actions** (ordered)
+- **Next planned actions** (ordered; name GitHub issue numbers, the issue holds the details)
 - **Waiting on user** (questions/blockers, e.g., "need login + corpus downloads", "need review ratings")
 - **Known issues**
 
@@ -253,3 +253,12 @@ Run long jobs in the background with logs and checkpoints so they can be resumed
 5. When real data arrives: run preprocessing, produce `stats.md`, and report counts. Check the §4 fallback (is the 5-year-old bucket big enough?).
 6. Phase 0 baselines → Phase 1 LoRA smoke test → first real run.
 7. Update `STATE.md`; give the user a short summary of where things stand and what they need to do next.
+
+## 14. Issue-driven workflow
+
+Work is tracked as GitHub Issues, one PR each. `CONTRIBUTING.md` holds the labels, branch names, PR rules and the public-repo data rule; read it before creating, working or syncing issues.
+
+- **Coordinator** (the main session): splits goals into issues with `/plan-issues`, dispatches them with `/work-issue`, and after the user merges runs `/sync-issues`. Hand any multi-file task to an issue and a worker; the coordinator's context stays for planning and relaying.
+- **Worker** (`.claude/agents/issue-worker.md`, one per issue, in its own worktree): delivers one PR that closes its issue. A RED item (§3) becomes a question on the issue plus the `needs-human` label, and the worker returns; the rest of the session carries on.
+- Humans merge. `STATE.md` changes only through `/sync-issues`, so parallel PRs never conflict on it.
+- Issues and PRs are public: §2's data and secret rules apply to every issue body, comment, PR description and commit message.
