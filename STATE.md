@@ -1,12 +1,12 @@
 # STATE.md — live session handoff
 
-_Last updated: 2026-11-18 (session 6)_
+_Last updated: 2026-11-18 (session 6, synced after PR #7)_
 
 **Active work is tracked in GitHub Issues** (https://github.com/xArumos/simulearn/issues). This file is the handoff summary; `/sync-issues` keeps it current. Workflow: `CONTRIBUTING.md`, CLAUDE.md §14.
 
 ## Session 6 (2026-11-18): issue-driven workflow
 - Added `CONTRIBUTING.md`, issue/PR templates, CI (`.github/workflows/tests.yml` + `requirements-ci.txt`, CPU-only; 75 tests pass in a fresh venv), workflow labels, and `.claude/` (agent `issue-worker`; skills `/plan-issues`, `/work-issue`, `/sync-issues`; project permissions). CLAUDE.md §14.
-- Next: turn "Next planned actions" and "Waiting on user" below into issues with `/plan-issues`.
+- Merged as PR #7. Planned as issues #8-#18 (tracking issue #18). **Change of plans:** training moves to HiPerGator (Track A, first), and the demo + MongoDB move from the HF Space/Atlas to Justin's desktop behind a Cloudflare Tunnel, with the Space kept as a fallback (Track B).
 
 ## Session 5 (2026-11-03) — everything merged into `main`
 - Branch `justin/merge-to-main` (from `main`): merges Dante's PR #4 (`integrate/child-llm-main`: our Phase 1 snapshot + Gleason adult-target pilot), fixes its `warmup_ratio` bug (transformers 5.20 has no such argument; `warmup_steps` < 1 is a fraction), then applies our hosted-demo and ZeroGPU commits. README combines our guide, Dante's Gleason section, main's notebook workflow and Transcript API; `.gitignore` is the union. 75 tests pass.
@@ -79,21 +79,18 @@ Inside WSL: `source /mnt/c/Users/justin/dev/simulearn-testing/scripts/env_wsl.sh
 From Claude's Windows shell: write a .sh to the scratchpad, then run `wsl.exe -d Ubuntu -- bash /mnt/c/.../that.sh` (with `MSYS_NO_PATHCONV=1`).
 
 ## Next planned actions
-1. When ratings come back: `python -m src.eval.score_ratings --phase phase1 [--csv one file per rater]` → `reports/phase1/ratings_summary.md`. Pick the best of runs 3/4.
-2. Runs 5-6 (one variable from the winner; grid lr 1e-4/5e-4, rank 8/32), if the user wants them. The stop rule counts run 4 as "not improved" (mixed), which is 1 of 3.
-3. Phase 1 report `reports/phase1/phase_report.md` (with test-split metrics for the final pick), then Phase 2 (QLoRA 7B).
-4. Rebuild the meeting notebook after any new result: `python scripts/build_meeting_notebook.py`.
+Task list lives on GitHub; tracking issue #18.
+1. Track A (HiPerGator, do first): #9 SLURM scripts (agent-ready) → #10 age-4 config (after #9) → #11 submit runs (Justin; needs #8, #9, #10) → #12 collect results.
+2. Track B (self-hosted demo): #13 local MongoDB (agent-ready) → #14 demo service + D10 → #15 tunnel scripts → #16 Cloudflare + external test (Justin) → #17 Pages + README.
+3. Still open, not yet issues: Phase 1 ratings → pick run 3 vs 4 (`python -m src.eval.score_ratings --phase phase1`), optional runs 5-6, Phase 1 report. Rebuild the meeting notebook after new results (`python scripts/build_meeting_notebook.py`).
 
 ## Waiting on user
-- **Hosted demo:** Dr. Dever approved (D9, 2026-11-03). Remaining: the one-time setup in README "Team demo in the browser":
-  - HF login, adapter upload, Space creation and secrets.
-  - Atlas cluster.
-  - Done: Space live and public (password-gated), Pages live from `main`.
-  - Ages 4 and 6 have no trained adapter yet (age 6: Samaree's). The picker shows only age 5 until they do.
-- **Blind ratings:** fill in `reports/phase1/review_ratings.csv` (28 items x 4 replies; 1-5 child-likeness, coherence, age-appropriateness). Each teammate can rate their own copy of the CSV. Don't open `review_key.json` until done. These files contain CHILDES text: local only, git-ignored.
+- **#8 HiPerGator one-time setup** (blocks #11): log in, clone, build venv, copy `data/processed*/` to `/blue`, Dr. Dever OK for CHILDES data on HiPerGator, then comment account / QOS / partition / GPU type on the issue.
+- **#11** submit smoke jobs, then the full chain (after #8, #9, #10).
+- **#16** Cloudflare account + tunnel on the desktop, external test (after #14, #15).
+- **Blind ratings:** fill in `reports/phase1/review_ratings.csv` (28 items x 4 replies; 1-5 child-likeness, coherence, age-appropriateness). Each teammate can rate their own copy. Don't open `review_key.json` until done. Local only, git-ignored (CHILDES text).
 - Decide whether to spend runs 5-6 before or after the ratings.
-- **HiPerGator go-ahead** (user said to wait). User-only steps: log in, clone, build the venv, copy `data/processed*/` to `/blue`, and provide the account/QOS + GPU partition for the sbatch scripts. Confirm with Dr. Dever that storing CHILDES data on HiPerGator is fine.
-- Non-blocking: Dr. Dever to confirm Cameron (Eng-AAE).
+- Non-blocking: Dr. Dever to confirm Cameron (Eng-AAE). Ask Dante to delete the public `Dante7162-patch-1` branch (contains `Gleason.zip`).
 
 ## Known issues
 - Test split is small for some corpora: Cameron has 3 age-5 children (0 in val); Warren has 0 in test; MacWhinney (Ross + Mark, one group) is all in train. Fine for an aggregate evaluation, but per-corpus test numbers would be noisy.
