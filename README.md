@@ -11,7 +11,7 @@ Data: CHILDES (MacWhinney, B. (2000). *The CHILDES Project: Tools for Analyzing 
 The side-by-side chat demo (untrained Qwen vs our fine-tuned child model, one adapter per age) is `src/demo/chat_demo.py`. It runs locally, or hosted on a free Hugging Face Space for advisors. GitHub Pages (`docs/index.html`) is only the landing page with instructions. It can't run a model, so it links to the Space.
 
 **Locally (GPU, inside WSL):** `bash scripts/demo.sh`, then open http://localhost:7860. Optional environment variables:
-- `MONGODB_URI` saves chats and ratings.
+- `MONGODB_URI` saves chats and ratings (local MongoDB: see "Local MongoDB" below; `.env` is read automatically).
 - `DEMO_PASSWORD` adds a password.
 
 Without them, nothing is saved and there is no password. Stop the demo before training, because both together don't fit in 12 GB VRAM.
@@ -101,6 +101,36 @@ and also works when Jupyter is launched from `notebooks/`.
 Outputs are written beneath `data/processed/` and `data/experiments/`; they are
 local artifacts and are not committed.
 
+## Local MongoDB
+
+Demo chats, ratings and the transcript API can be stored in a MongoDB on the desktop (instead of Atlas). It runs in Docker, listens on `127.0.0.1:27017` only (nothing outside the PC can reach it, so it has no password), and keeps its data in the Docker volume `simulearn-mongo-data`, outside the repo.
+
+**One-time setup (inside WSL):**
+1. Install Docker: Docker Desktop for Windows with "WSL integration" turned on for Ubuntu, or Docker Engine inside WSL. Check with `docker compose version`.
+2. `cp .env.example .env`. The defaults point at the local database (`MONGODB_URI=mongodb://127.0.0.1:27017`, `MONGODB_DATABASE=simulearn`). Set `DEMO_PASSWORD` there if you want one. `.env` is git-ignored; never commit it.
+
+**Start / stop:**
+```bash
+docker compose up -d       # start; restarts by itself with Docker until stopped
+docker compose ps          # "healthy" means it's ready
+docker compose stop        # stop (data is kept)
+docker compose down        # remove the container (data is still kept in the volume)
+```
+`docker compose down -v` deletes the volume, which is **all saved chats**. Back up first.
+
+**Use it:** `bash scripts/demo.sh` and `python -m uvicorn backend.app.main:app` both read `.env` (via `backend/app/env.py`; variables already set in the shell win). With `MONGODB_URI` empty or unset, the demo saves nothing and still works. The backend always needs a database and falls back to `mongodb://127.0.0.1:27017`.
+
+**Backups:** `bash scripts/db_backup.sh` writes one gzipped dump, `~/simulearn-backups/simulearn-YYYYMMDD-HHMMSS.archive.gz` (change the folder with `SIMULEARN_BACKUP_DIR`; it refuses folders inside the repo, because dumps contain chat text). It uses `mongodump` if installed, otherwise the copy inside the container. Restore with either:
+```bash
+docker exec -i simulearn-mongo mongorestore --gzip --archive < ~/simulearn-backups/simulearn-YYYYMMDD-HHMMSS.archive.gz
+mongorestore --uri=mongodb://127.0.0.1:27017 --gzip --archive="$HOME"/simulearn-backups/simulearn-YYYYMMDD-HHMMSS.archive.gz
+```
+Add `--drop` to replace collections that already exist instead of adding to them. To check a backup, restore it into a scratch database: add `--nsFrom='simulearn.*' --nsTo='restorecheck.*'`, look at the counts in `mongosh`, then drop `restorecheck`.
+
+**Without Docker:** install MongoDB Community Server in WSL (Ubuntu packages from mongodb.com), keep `bindIp: 127.0.0.1` in `/etc/mongod.conf`, and start it with `sudo systemctl start mongod`. The same `.env` and backup script work, using the host `mongodump` from the MongoDB Database Tools.
+
+The hosted Space (above) has no access to this PC, so it keeps using Atlas unless the `MONGODB_URI` secret is removed.
+
 ## Transcript API
 
 The optional `backend/` service stores conversations and append-only transcript
@@ -109,7 +139,7 @@ and clients can retrieve either the latest reconstructed transcript or the
 transcript as of a specific iteration. The service stores messages after the
 LLM call; it does not invoke a model.
 
-Install and start a local MongoDB instance, then from the repository root run:
+Start the local MongoDB (see "Local MongoDB" above), then from the repository root run:
 
 ```powershell
 python -m pip install -r backend\requirements.txt
