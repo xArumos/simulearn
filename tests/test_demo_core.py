@@ -2,7 +2,11 @@
 import importlib.util
 from pathlib import Path
 
-from src.demo.chat_demo import build_messages, find_adapters, render, system_prompt
+import peft
+import pytest
+
+from src.demo import chat_demo
+from src.demo.chat_demo import Demo, build_messages, find_adapters, render, system_prompt
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -53,3 +57,79 @@ def test_space_bundle_has_code_and_no_data(tmp_path):
     assert {"app.py", "requirements.txt", "README.md", "configs/demo.yaml", "src/demo/chat_demo.py",
             "backend/app/main.py"} <= files
     assert not any(f.endswith((".cha", ".jsonl", ".safetensors")) or f.startswith("data/") for f in files)
+
+
+class FakePeft:
+    """Stands in for peft.PeftModel: records how adapters are loaded and whether the model is moved."""
+    calls: list = []
+
+    def __init__(self, base):
+        self.base, self.moved_to = base, None
+
+    @classmethod
+    def from_pretrained(cls, base, path, adapter_name, **kw):
+        cls.calls.append(("from_pretrained", adapter_name, kw.get("torch_device")))
+        return cls(base)
+
+    def load_adapter(self, path, adapter_name, **kw):
+        FakePeft.calls.append(("load_adapter", adapter_name, kw.get("torch_device")))
+
+    def to(self, device):
+        if self.base.get("load_in_4bit"):
+            raise AssertionError("bitsandbytes 4-bit models can't be moved with .to()")
+        self.moved_to = device
+        return self
+
+    def eval(self):
+        return self
+
+
+@pytest.fixture
+def fake_loading(monkeypatch):
+    """Mock the model, tokenizer and PEFT loaders (no download, no GPU). Returns the configs passed to load_model."""
+    loaded = []
+    FakePeft.calls = []
+    monkeypatch.delenv("SPACES_ZERO_GPU", raising=False)
+    monkeypatch.setattr(chat_demo, "load_tokenizer", lambda name: object())
+    monkeypatch.setattr(chat_demo, "load_model", lambda mcfg: loaded.append(mcfg) or dict(mcfg))
+    monkeypatch.setattr(peft, "PeftModel", FakePeft)
+    return loaded
+
+
+def demo_cfg(**extra):
+    return {"base_model": "fake/base", "context_turns": 6, "decoding": {}, **extra}
+
+
+ADAPTERS = {4: {"path": Path("a4"), "label": ""}, 5: {"path": Path("a5"), "label": ""}}
+
+
+def test_bf16_path_is_unchanged(fake_loading):
+    demo = Demo(demo_cfg(), ADAPTERS, device="cuda")
+    assert fake_loading == [{"name": "fake/base", "dtype": "bfloat16", "device_map": "cpu"}]
+    assert FakePeft.calls == [("from_pretrained", "age4", "cpu"), ("load_adapter", "age5", "cpu")]
+    assert demo.model.moved_to == "cuda"
+
+
+def test_load_in_4bit_false_is_the_bf16_path(fake_loading):
+    Demo(demo_cfg(load_in_4bit=False), ADAPTERS, device="cuda")
+    assert "load_in_4bit" not in fake_loading[0]
+
+
+def test_4bit_loads_straight_onto_cuda(fake_loading):
+    demo = Demo(demo_cfg(load_in_4bit=True), ADAPTERS, device="cuda")
+    assert fake_loading == [{"name": "fake/base", "dtype": "bfloat16", "device_map": "cuda", "load_in_4bit": True}]
+    assert FakePeft.calls == [("from_pretrained", "age4", "cuda"), ("load_adapter", "age5", "cuda")]
+    assert demo.model.moved_to is None  # never .to(): FakePeft.to raises for a 4-bit base
+
+
+def test_4bit_on_cpu_is_refused(fake_loading):
+    with pytest.raises(SystemExit, match="4-bit.*CUDA GPU"):
+        Demo(demo_cfg(load_in_4bit=True), ADAPTERS, device="cpu")
+    assert fake_loading == []
+
+
+def test_4bit_on_zerogpu_is_refused(fake_loading, monkeypatch):
+    monkeypatch.setenv("SPACES_ZERO_GPU", "true")
+    with pytest.raises(SystemExit, match="ZeroGPU"):
+        Demo(demo_cfg(load_in_4bit=True), ADAPTERS, device="cuda")
+    assert fake_loading == []
