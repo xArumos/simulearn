@@ -4,6 +4,7 @@
 #   scripts/slurm/submit_all.sh --dry-run      # print every sbatch command, submit nothing
 #   scripts/slurm/submit_all.sh --smoke-only   # only the two smoke tests (1.5B LoRA, 7B QLoRA)
 #   scripts/slurm/submit_all.sh                # smoke tests, then everything else once they pass
+#   scripts/slurm/submit_all.sh --only qwen1.5b_lora_ep1_age4_hpg   # one run on its own (train -> evaluate)
 #
 # The chain:
 #   1. Smoke:   1.5B LoRA smoke and 7B QLoRA smoke, each trained then evaluated.
@@ -11,11 +12,14 @@
 #        Phase 0  four baselines (evaluation only, no training)
 #        Phase 1  Qwen-1.5B LoRA ep1 (run 3), ep1 ctx10 (run 4), SmolLM2-360M LoRA; each train -> evaluate
 #        Phase 2  Qwen-7B QLoRA ep1; train -> evaluate
+#        Phase 3  Qwen-1.5B LoRA ep1 on the age-4 bucket (run 3 recipe); train -> evaluate
 # Every run writes to experiments/<stamp>_<run_name>/ (SLURM logs as slurm-<kind>-<jobid>.out there too).
 #
 # Options:
 #   --dry-run          print the sbatch commands with placeholder job ids (JOB_1, JOB_2, ...)
 #   --smoke-only       submit only the smoke stage
+#   --only RUN_NAME    submit just the config whose run_name is RUN_NAME, with no smoke gate:
+#                      train -> evaluate for a training config, a single eval job for a Phase 0 baseline
 #   --stamp STAMP      run-id prefix (default: current YYYYMMDD-HHMM)
 #   --env-file FILE    settings file (default: scripts/slurm/hpg.env, or $HPG_ENV_FILE)
 set -euo pipefail
@@ -25,19 +29,24 @@ cd "$ROOT"
 
 DRY_RUN=0
 SMOKE_ONLY=0
+ONLY=""
 STAMP="$(date +%Y%m%d-%H%M)"
 ENV_FILE="${HPG_ENV_FILE:-scripts/slurm/hpg.env}"
 while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) DRY_RUN=1 ;;
     --smoke-only) SMOKE_ONLY=1 ;;
+    --only) ONLY="${2:?--only needs a run_name}"; shift ;;
     --stamp) STAMP="${2:?--stamp needs a value}"; shift ;;
     --env-file) ENV_FILE="${2:?--env-file needs a value}"; shift ;;
-    -h|--help) sed -n '2,20p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,25p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 2 ;;
   esac
   shift
 done
+if [ -n "$ONLY" ] && [ "$SMOKE_ONLY" = 1 ]; then
+  echo "error: --only and --smoke-only can't be combined" >&2; exit 2
+fi
 
 # ---- Job lists (config paths relative to the repo root) ----
 SMOKE_TRAIN=(
@@ -55,6 +64,9 @@ PHASE12_TRAIN=(
   configs/hpg/phase1/qwen1.5b_lora_ep1_ctx10_hpg.yaml
   configs/hpg/phase1/smol360m_lora_r16_lr2e-4_hpg.yaml
   configs/hpg/phase2/qwen7b_qlora_ep1_hpg.yaml
+)
+PHASE3_TRAIN=(
+  configs/hpg/phase3/qwen1.5b_lora_ep1_age4_hpg.yaml
 )
 
 # ---- Settings ----
@@ -141,15 +153,46 @@ submit_train_eval() {
   submit eval "$cfg" "$run_id" "$train_job" "experiments/$run_id/adapter"
 }
 
+# ---- --only: pick the one config by run_name ----
+ONLY_CFG=""
+ONLY_KIND=""
+if [ -n "$ONLY" ]; then
+  for cfg in "${PHASE0_EVAL[@]}"; do
+    if [ "$(run_name "$cfg")" = "$ONLY" ]; then ONLY_CFG="$cfg"; ONLY_KIND=eval; fi
+  done
+  for cfg in "${SMOKE_TRAIN[@]}" "${PHASE12_TRAIN[@]}" "${PHASE3_TRAIN[@]}"; do
+    if [ "$(run_name "$cfg")" = "$ONLY" ]; then ONLY_CFG="$cfg"; ONLY_KIND=train; fi
+  done
+  if [ -z "$ONLY_CFG" ]; then
+    echo "error: --only $ONLY matches no run_name in configs/hpg/. Known run_names:" >&2
+    for cfg in "${SMOKE_TRAIN[@]}" "${PHASE0_EVAL[@]}" "${PHASE12_TRAIN[@]}" "${PHASE3_TRAIN[@]}"; do
+      echo "  $(run_name "$cfg")" >&2
+    done
+    exit 2
+  fi
+fi
+
 # ---- Checks before anything is queued ----
-ALL=("${SMOKE_TRAIN[@]}")
-if [ "$SMOKE_ONLY" = 0 ]; then ALL+=("${PHASE0_EVAL[@]}" "${PHASE12_TRAIN[@]}"); fi
+if [ -n "$ONLY" ]; then ALL=("$ONLY_CFG")
+else
+  ALL=("${SMOKE_TRAIN[@]}")
+  if [ "$SMOKE_ONLY" = 0 ]; then ALL+=("${PHASE0_EVAL[@]}" "${PHASE12_TRAIN[@]}" "${PHASE3_TRAIN[@]}"); fi
+fi
 for cfg in "${ALL[@]}"; do
   check_config "$cfg"
   if [ "$DRY_RUN" = 0 ]; then check_data "$cfg"; fi
 done
 if [ "$DRY_RUN" = 0 ] && ! command -v sbatch >/dev/null 2>&1; then
   echo "error: sbatch not found; run this on a HiPerGator login node" >&2; exit 1
+fi
+
+# ---- --only: one run, no smoke gate ----
+if [ -n "$ONLY" ]; then
+  echo "# --only $ONLY (stamp $STAMP)"
+  if [ "$ONLY_KIND" = train ]; then submit_train_eval "$ONLY_CFG" ""
+  else submit eval "$ONLY_CFG" "${STAMP}_$ONLY" ""; fi
+  echo "# $N_JOBS jobs$([ "$DRY_RUN" = 1 ] && echo ' (dry run, nothing submitted)'). Watch them with: squeue -u \$USER"
+  exit 0
 fi
 
 # ---- Stage 1: smoke ----
@@ -172,9 +215,9 @@ for cfg in "${PHASE0_EVAL[@]}"; do
   submit eval "$cfg" "${STAMP}_$(run_name "$cfg")" "$GATE"
 done
 
-# ---- Stage 3: Phase 1 LoRA and Phase 2 QLoRA, each train -> evaluate, gated on the smoke tests ----
-echo "# stage phase1+phase2 (after $GATE)"
-for cfg in "${PHASE12_TRAIN[@]}"; do
+# ---- Stage 3: Phase 1 LoRA, Phase 2 QLoRA and Phase 3 age-4 LoRA, each train -> evaluate, gated on the smoke tests ----
+echo "# stage phase1+phase2+phase3 (after $GATE)"
+for cfg in "${PHASE12_TRAIN[@]}" "${PHASE3_TRAIN[@]}"; do
   submit_train_eval "$cfg" "$GATE"
 done
 

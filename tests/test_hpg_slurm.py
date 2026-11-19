@@ -95,7 +95,52 @@ def test_dependencies(chain):
     for run_id, jid in trains.items():
         job = chain[jid]
         assert job["deps"] == ([] if job["config"] in SMOKE else smoke_evals), run_id
-    assert len(trains) == 6 and len(evals) == 10
+    assert len(trains) == 7 and len(evals) == 11
+
+
+AGE4 = "configs/hpg/phase3/qwen1.5b_lora_ep1_age4_hpg.yaml"
+
+
+def test_age4_config_is_run3_recipe_on_age4():
+    age4 = load_config(PROJECT_ROOT / AGE4)
+    run3 = load_config(PROJECT_ROOT / "configs/hpg/phase1/qwen1.5b_lora_ep1_hpg.yaml")
+    local = load_config(PROJECT_ROOT / "configs/phase3/qwen1.5b_lora_ep1_age4.yaml")
+    assert age4["run_name"] == "qwen1.5b_lora_ep1_age4_hpg"
+    assert age4["age_label"] == 4 and age4["data"]["bucket"] == "age4"
+    for key in ("model", "lora", "train", "eval"):
+        assert age4[key] == run3[key] == local[key], key
+    assert {k: v for k, v in age4["data"].items() if k != "bucket"} == {
+        k: v for k, v in run3["data"].items() if k != "bucket"}
+
+
+def test_age4_in_chain_after_smoke(chain):
+    jobs = [j for j in chain.values() if j["config"] == AGE4]
+    assert sorted(j["script"].rsplit("/", 1)[1] for j in jobs) == ["evaluate.sbatch", "train.sbatch"]
+
+
+def test_only_submits_one_run_without_the_smoke_gate():
+    r = run_submit("--dry-run", "--only", "qwen1.5b_lora_ep1_age4_hpg", "--stamp", STAMP)
+    assert r.returncode == 0, r.stderr
+    jobs = parse_jobs(r.stdout)
+    assert len(jobs) == 2 and {j["config"] for j in jobs.values()} == {AGE4}
+    train, ev = jobs["JOB_1"], jobs["JOB_2"]
+    assert train["script"].endswith("train.sbatch") and train["deps"] == []
+    assert ev["script"].endswith("evaluate.sbatch") and ev["deps"] == ["JOB_1"]
+    assert ev["adapter"] == f"experiments/{STAMP}_qwen1.5b_lora_ep1_age4_hpg/adapter"
+
+
+def test_only_baseline_is_eval_only():
+    r = run_submit("--dry-run", "--only", "qwen1.5b_base-default_hpg", "--stamp", STAMP)
+    assert r.returncode == 0, r.stderr
+    jobs = parse_jobs(r.stdout)
+    assert len(jobs) == 1 and jobs["JOB_1"]["script"].endswith("evaluate.sbatch") and jobs["JOB_1"]["deps"] == []
+
+
+def test_only_rejects_unknown_run_and_smoke_only():
+    r = run_submit("--dry-run", "--only", "no_such_run")
+    assert r.returncode != 0 and "no_such_run" in r.stderr
+    r = run_submit("--dry-run", "--only", "qwen1.5b_lora_ep1_age4_hpg", "--smoke-only")
+    assert r.returncode != 0
 
 
 def test_smoke_only():
