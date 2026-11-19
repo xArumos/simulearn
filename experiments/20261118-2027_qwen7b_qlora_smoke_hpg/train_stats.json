@@ -1,0 +1,22 @@
+{
+ "train_examples": 200,
+ "train_tokens": 27613,
+ "train_target_tokens": 1795,
+ "val_examples": 100,
+ "val_tokens": 13597,
+ "val_target_tokens": 893,
+ "trainable_params": 40370176,
+ "total_params": 7655986688,
+ "train_seconds": 26,
+ "train_result": {
+  "train_runtime": 25.3293,
+  "train_samples_per_second": 9.475,
+  "train_steps_per_second": 2.369,
+  "total_flos": 1902047421173760.0,
+  "train_loss": 2.79522336324056,
+  "epoch": 1.2
+ },
+ "best_checkpoint": "experiments/20261118-2027_qwen7b_qlora_smoke_hpg/checkpoints/checkpoint-60",
+ "best_eval_loss": 2.383887767791748,
+ "peak_vram_gib": 12.93
+}
