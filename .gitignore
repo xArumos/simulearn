@@ -56,3 +56,9 @@ experiments/*/slurm-*.out
 scripts/cloudflared/*
 !scripts/cloudflared/config.yml.example
 # --- end Cloudflare Tunnel ---
+
+# --- Product frontend (issue #60) ---
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
+# --- end product frontend ---
