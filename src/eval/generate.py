@@ -6,13 +6,14 @@ import math
 import torch
 
 from src.train.collator import IGNORE, PadCollator, encode_example
+from src.utils.chat_template import apply_chat_template
 
 
 def build_prompt_ids(tok, messages: list[dict], max_prompt_tokens: int) -> list[int]:
     """Chat-template the context (everything but the real reply), dropping the oldest turns if too long."""
     msgs = list(messages[:-1])
     while True:
-        ids = tok.apply_chat_template(msgs, add_generation_prompt=True, tokenize=True)
+        ids = apply_chat_template(tok, msgs, add_generation_prompt=True, tokenize=True)
         if hasattr(ids, "keys"):  # some versions return a BatchEncoding
             ids = ids["input_ids"]
         if len(ids) <= max_prompt_tokens or len(msgs) <= 2:

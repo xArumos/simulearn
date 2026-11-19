@@ -29,6 +29,7 @@ import torch
 
 from backend.app.env import load_env_file
 from src.demo.store import DemoStore, new_session_id
+from src.utils.chat_template import apply_chat_template
 from src.utils.config import load_config, resolve
 from src.utils.modeling import load_model, load_tokenizer
 from src.utils.prompts import STRONG_PROMPT, SYSTEM_PROMPT
@@ -111,7 +112,7 @@ class Demo:
     def reply(self, history: list[dict], adult_line: str, age: int | None, system: str) -> str:
         """age=None gives the untrained model (same weights with the LoRA add-on switched off)."""
         msgs = build_messages(system, history, adult_line, self.cfg["context_turns"])
-        text = self.tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
+        text = apply_chat_template(self.tok, msgs, tokenize=False, add_generation_prompt=True)
         ids = self.tok(text, return_tensors="pt").to(self.model.device)
         kw = dict(**ids, do_sample=True, pad_token_id=self.tok.pad_token_id, **self.cfg["decoding"])
         with self.lock:
