@@ -259,7 +259,187 @@ def test_scenarios_file_is_valid_and_the_cli_matches_the_serving_scripts():
 
 
 def test_no_model_name_is_hard_coded_in_the_product_server():
-    for f in ["server.py", "sessions.py"]:
+    for f in ["server.py", "sessions.py", "export.py"]:
         text = (ROOT / "src" / "product" / f).read_text().lower()
         for name in ["qwen", "llama", "smollm", "mistral", "gemma"]:
             assert name not in text, (f, name)
+
+
+# --- feedback, history and export (#59) ---------------------------------------------------------------------
+
+
+def rate(c, sid, turn=1, side="child", liked=True, note=""):
+    return c.post("/api/feedback", json={"session_id": sid, "turn": turn, "side": side, "liked": liked,
+                                         "note": note})
+
+
+def test_feedback_rows_join_to_their_conversation_by_objectid_with_the_right_version():
+    from bson import ObjectId
+
+    app, _, db = make(saving=True)
+    c = client_for(app, "ada")
+    sid = start(c, compare=False)
+    say(c, sid, "one")
+    say(c, sid, "two")
+    c.patch(f"/api/sessions/{sid}", json={"compare": True})
+    say(c, sid, "three")
+    c.post(f"/api/sessions/{sid}/turns/3/untrained")  # the untrained side's first iteration (version 1)
+
+    assert rate(c, sid, turn=2, note="  nice  ").json() == {"ok": True, "saved": True}
+    assert rate(c, sid, turn=3, side="untrained", liked=False).json() == {"ok": True, "saved": True}
+    convs = db["practice_sessions"].find_one({"_id": sid})["conversations"]
+    child = db["feedback"].find_one({"side": "child"})
+    assert isinstance(child["conversation_id"], ObjectId) and child["conversation_id"] == ObjectId(convs["child"])
+    assert child["version"] == 2 and child["turn"] == 2 and child["session_id"] == sid
+    assert child["note"] == "nice" and child["liked"] is True and child["reply"] == CHILD_REPLY
+    assert db["conversations"].find_one({"_id": child["conversation_id"]}) is not None
+    it = db["transcript_iterations"].find_one({"conversation_id": child["conversation_id"], "version": 2})
+    assert it["messages"][0]["content"] == "two"
+    untrained = db["feedback"].find_one({"side": "untrained"})
+    assert untrained["conversation_id"] == ObjectId(convs["untrained"])
+    assert untrained["version"] == 1 and untrained["turn"] == 3 and untrained["liked"] is False
+
+
+def test_feedback_with_saving_off_is_acknowledged_but_not_saved():
+    app, _, db = make(saving=False)
+    c = client_for(app, "ada")
+    sid = start(c)
+    say(c, sid, "hi")
+    assert rate(c, sid).json() == {"ok": True, "saved": False}
+    assert db["feedback"].count_documents({}) == 0
+    # kept for this process, so the reopened session shows it
+    assert c.get(f"/api/sessions/{sid}").json()["exchanges"][0]["child"]["rating"] == {"liked": True, "note": ""}
+
+
+def test_feedback_that_fails_to_save_is_not_ok(monkeypatch):
+    app, _, db = make(saving=True)
+    c = client_for(app, "ada")
+    sid = start(c)
+    say(c, sid, "hi")
+
+    def broken(*a, **kw):
+        raise RuntimeError("disk full")
+
+    monkeypatch.setattr(db["feedback"], "insert_one", broken)
+    assert rate(c, sid).json() == {"ok": False, "saved": False}
+
+
+def test_feedback_for_a_missing_turn_or_side_is_rejected(setup):
+    c, _, _, _ = setup
+    sid = start(c)
+    say(c, sid, "hi")
+    assert rate(c, sid, turn=2).status_code == 404
+    assert rate(c, sid, side="untrained").status_code == 404  # compare was never on
+    assert rate(c, sid, side="adult").status_code == 422
+    assert rate(c, "not-a-session").status_code == 404
+
+
+def test_history_lists_own_sessions_newest_first(setup):
+    c, _, _, _ = setup
+    first = start(c, age=4, scenario_id="blocks")
+    say(c, first, "one")
+    say(c, first, "two")
+    second = start(c, compare=True)
+    other = client_for(c.app, "bob")
+    start(other)
+    rows = c.get("/api/sessions").json()
+    assert [r["id"] for r in rows] == [second, first]
+    assert rows[1] == {**rows[1], "age": 4, "scenario_title": "Blocks", "turns": 2, "compare": False}
+    assert rows[0] == {**rows[0], "age": 5, "scenario_title": None, "turns": 0, "compare": True}
+    assert rows[0]["created_at"].endswith("Z")
+    assert [r["id"] for r in c.get("/api/sessions?limit=1").json()] == [second]
+    assert c.get("/api/sessions?limit=0").status_code == 422
+    assert len(other.get("/api/sessions").json()) == 1
+
+
+def test_history_with_saving_off_lists_only_this_process():
+    app, _, db = make(saving=False)
+    # a session saved by an earlier, saving run is not listed by a process that isn't saving
+    saved_app = create_app(FakeEngine(), app.state.auth, MongoSessions(db), SCENARIOS)
+    start(client_for(saved_app, "ada"))
+    assert db["practice_sessions"].count_documents({}) == 1
+    c = client_for(app, "ada")
+    sid = start(c)
+    assert [r["id"] for r in c.get("/api/sessions").json()] == [sid]
+
+
+def test_session_detail_lines_up_both_sides_with_ratings(setup):
+    c, _, _, _ = setup
+    sid = start(c, compare=False, scenario_id="blocks")
+    say(c, sid, "one")
+    c.patch(f"/api/sessions/{sid}", json={"compare": True})
+    say(c, sid, "two")
+    c.post(f"/api/sessions/{sid}/turns/2/untrained")
+    rate(c, sid, turn=2, liked=True)
+    rate(c, sid, turn=2, liked=False, note="changed my mind")  # the later rating wins
+    d = c.get(f"/api/sessions/{sid}").json()
+    assert d["id"] == sid and d["turns"] == 2 and d["compare"] is True and d["compare_started_turn"] == 2
+    assert d["age_label"] == "60-71 months" and d["scenario_id"] == "blocks" and d["scenario_title"] == "Blocks"
+    assert d["models"] == {"child": "age5:run-a5", "untrained": "org/some-base-model"}
+    one, two = d["exchanges"]
+    assert one["adult"] == "one" and one["untrained"] is None and one["child"]["rating"] is None
+    assert one["child"] == {**one["child"], "text": CHILD_REPLY, "pause_s": 3}
+    assert two["untrained"]["text"] == UNTRAINED_REPLY and two["untrained"]["pause_s"] is None
+    assert two["child"]["rating"] == {"liked": False, "note": "changed my mind"}
+
+
+def test_users_only_see_and_export_their_own_sessions(setup):
+    c, _, _, _ = setup
+    sid = start(c)
+    say(c, sid, "hi")
+    other = client_for(c.app, "bob")
+    assert other.get(f"/api/sessions/{sid}").status_code == 404
+    for fmt in ("txt", "json"):
+        assert other.get(f"/api/sessions/{sid}/export?format={fmt}").status_code == 404
+    assert rate(other, sid).status_code == 404
+    assert c.get("/api/sessions/nope").status_code == 404
+    assert c.get(f"/api/sessions/{sid}/export?format=pdf").status_code == 422
+    anon = client_for(c.app)
+    for path in ["/api/sessions", f"/api/sessions/{sid}", f"/api/sessions/{sid}/export"]:
+        assert anon.get(path).status_code == 401
+    assert anon.post("/api/feedback", json={}).status_code == 401
+
+
+def test_export_round_trips_in_both_formats(setup):
+    from src.product.export import parse_txt
+
+    c, engine, _, _ = setup
+    replies = iter(["<SILENCE FOR 4 SECONDS> my dog", "", "yeah <SILENCE FOR 2 SECONDS> big"])
+    engine.reply = lambda history, adult, age, system: next(replies) if age else UNTRAINED_REPLY
+    sid = start(c, compare=True, scenario_id="blocks")
+    for n, line in enumerate(["what's that?", "tell me more", "how big?"], start=1):
+        say(c, sid, line)
+        if n != 2:
+            c.post(f"/api/sessions/{sid}/turns/{n}/untrained")
+    rate(c, sid, turn=1, note="sounds real")
+    full = c.get(f"/api/sessions/{sid}").json()
+
+    r = c.get(f"/api/sessions/{sid}/export?format=json")
+    assert r.status_code == 200 and r.headers["content-type"].startswith("application/json")
+    assert r.json() == full
+    disp = r.headers["content-disposition"]
+    assert disp.startswith('attachment; filename="simulearn-') and disp.endswith(f'-age5-{sid[:8]}.json"')
+
+    r = c.get(f"/api/sessions/{sid}/export?format=txt")
+    assert r.status_code == 200 and r.headers["content-type"].startswith("text/plain")
+    assert r.headers["content-disposition"].endswith('.txt"')
+    head = r.text.split("\n\n")[0]
+    assert "Child age: 5 (60-71 months)" in head and "Scenario: Blocks" in head
+    assert 'Model for "Child": fine-tuned child model (age5:run-a5)' in head
+    assert 'Model for "Untrained AI": the same base model without fine-tuning (org/some-base-model)' in head
+    assert "Date: " in head and " UTC" in head
+    assert parse_txt(r.text) == [
+        {"adult": "what's that?", "child": "(pauses 4 s) my dog", "untrained": UNTRAINED_REPLY},
+        {"adult": "tell me more", "child": "(no reply)"},
+        {"adult": "how big?", "child": "yeah (pauses 2 s) big", "untrained": UNTRAINED_REPLY},
+    ]
+    assert c.get(f"/api/sessions/{sid}/export").headers["content-disposition"].endswith('.txt"')  # default
+
+
+def test_export_of_a_session_without_scenario_or_compare(setup):
+    c, _, _, _ = setup
+    sid = start(c)
+    say(c, sid, "hi")
+    text = c.get(f"/api/sessions/{sid}/export?format=txt").text
+    assert "Scenario: free practice (no scenario)" in text and "Untrained AI" not in text
+    assert c.get(f"/api/sessions/{sid}").json()["models"]["untrained"] is None

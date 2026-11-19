@@ -14,6 +14,10 @@ API (types: frontend/src/api.ts):
 - POST  /api/sessions/{id}/turns    {adult_line} -> the child's reply {turn, text, rendered, pause_s, secs}
 - POST  /api/sessions/{id}/turns/{n}/untrained   the untrained model's reply to turn n (409 when compare is off)
 - PATCH /api/sessions/{id}          {compare}: switch the untrained side on or off mid-session
+- POST  /api/feedback               {session_id, turn, side, liked, note?} -> {ok, saved}; saved=false with saving off
+- GET   /api/sessions?limit=        the user's past sessions, newest first (with saving off: this process's only)
+- GET   /api/sessions/{id}          the full session for a read-only reopen: both sides by turn, with ratings
+- GET   /api/sessions/{id}/export?format=txt|json   the same as a download (src/product/export.py)
 
 The server keeps no conversation state: each request reads the session's turns back from the store
 (src/product/sessions.py) and trims the context exactly like training (`build_messages`, `context_turns` from
@@ -39,15 +43,16 @@ import threading
 import time
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, status
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, status
+from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel, Field
 
 from src.demo.engine import SILENCE_RE, render, system_prompt
 from src.product.auth import Auth, current_user
 from src.product.auth import router as auth_router
+from src.product.export import export, session_detail, summary
 from src.product.sessions import MemorySessions, MongoSessions, history
 from src.utils.config import PROJECT_ROOT, load_config, resolve
 
@@ -83,6 +88,19 @@ class TurnIn(BaseModel):
 
 class CompareIn(BaseModel):
     compare: bool
+
+
+class FeedbackIn(BaseModel):
+    session_id: str
+    turn: int
+    side: Literal["child", "untrained"]
+    liked: bool
+    note: str = Field(default="", max_length=MAX_LINE)
+
+
+class FeedbackResult(BaseModel):
+    ok: bool
+    saved: bool
 
 
 class TurnReply(BaseModel):
@@ -125,6 +143,7 @@ def create_app(engine: Any, auth: Auth, store: MongoSessions | MemorySessions, s
     app.include_router(auth_router)
     cfg = engine.cfg
     scenario_ids = {s["id"] for s in scenarios}
+    scenario_titles = {s["id"]: s["title"] for s in scenarios}
     locks: defaultdict[tuple[str, str], threading.Lock] = defaultdict(threading.Lock)
     locks_guard = threading.Lock()
 
@@ -153,6 +172,11 @@ def create_app(engine: Any, auth: Auth, store: MongoSessions | MemorySessions, s
         return {"session": session["_id"], "side": side, "turn": turn, "age": session["age"],
                 "scenario_id": session["scenario_id"], "seed": seed, "gen_seconds": round(secs, 2),
                 "device": engine.device}
+
+    def detail(s: dict) -> dict:
+        return session_detail(s, store.turns(s, "child"), store.turns(s, "untrained"), store.ratings(s),
+                              scenario_titles.get(s["scenario_id"]),
+                              str(engine.adapters.get(s["age"], {}).get("label", "")), cfg["base_model"])
 
     api = APIRouter(prefix="/api", dependencies=[Depends(current_user)])
 
@@ -239,6 +263,32 @@ def create_app(engine: Any, auth: Auth, store: MongoSessions | MemorySessions, s
                                           "seed": seed},
                          model=cfg["base_model"], metadata=meta(s, "untrained", turn, seed, secs))
         return reply_fields(turn, text, secs)
+
+    @api.post("/feedback", response_model=FeedbackResult)
+    def feedback(body: FeedbackIn, user: dict = Depends(current_user)):
+        s = get_session(body.session_id, user)
+        rated = next((t for t in store.turns(s, body.side) if t["turn"] == body.turn), None)
+        if rated is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, f"No {body.side} reply at turn {body.turn}")
+        saved = store.rate(s, body.side, rated, body.liked, body.note)
+        # saving on but the write failed (logged by DemoStore.rate): not ok; saving off: ok, kept in memory only
+        return FeedbackResult(ok=saved or not store.saving, saved=saved)
+
+    @api.get("/sessions")
+    def list_sessions(limit: int = Query(50, ge=1, le=200), user: dict = Depends(current_user)) -> list[dict]:
+        return [summary(s, s["turns"], scenario_titles.get(s["scenario_id"]))
+                for s in store.recent(owner(user), limit)]
+
+    @api.get("/sessions/{session_id}")
+    def get_full_session(session_id: str, user: dict = Depends(current_user)) -> dict:
+        return detail(get_session(session_id, user))
+
+    @api.get("/sessions/{session_id}/export")
+    def export_session(session_id: str, format: Literal["txt", "json"] = "txt",
+                       user: dict = Depends(current_user)) -> Response:
+        body, media_type, name = export(detail(get_session(session_id, user)), format)
+        return Response(body, media_type=media_type,
+                        headers={"Content-Disposition": f'attachment; filename="{name}"'})
 
     app.include_router(api)
 
