@@ -1,5 +1,7 @@
-# systemd USER service for the always-on SimuLearn demo (WSL2 on the desktop). Install steps: README.md,
-# "Always-on demo on the desktop". Edit the two repo paths below if the repo is not at ~/dev/simulearn.
+# systemd USER service for the SimuLearn demo (WSL2 on the desktop), run on demand. Install it once (README.md,
+# "Test sessions on the desktop"), then start and stop it with scripts/demo_up.sh and scripts/demo_down.sh.
+# "systemctl --user enable" is optional and not recommended: starting at boot keeps the model in GPU memory.
+# Edit the two repo paths below if the repo is not at ~/dev/simulearn.
 # Secrets are NOT set here: the demo reads DEMO_PASSWORD and MONGODB_URI from the repo's git-ignored .env.
 
 [Unit]

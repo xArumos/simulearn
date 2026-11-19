@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# Cloudflare Tunnel to the always-on desktop demo (scripts/serve_demo.sh on 127.0.0.1:7860). No router ports opened.
+# Cloudflare Tunnel to the desktop demo (scripts/serve_demo.sh on 127.0.0.1:7860). No router ports opened.
 #   bash scripts/tunnel.sh          # quick mode: random https://<words>.trycloudflare.com URL, new on every restart
 #   bash scripts/tunnel.sh named    # named mode: your own hostname, from scripts/cloudflared/config.yml
-# Run by scripts/systemd/simulearn-tunnel.service, or by hand. Install and login steps: README.md, "Share the demo
-# with a Cloudflare Tunnel". cloudflared is installed system-wide by you (not in the venv); this script never
+# The demo runs on demand: scripts/demo_up.sh starts it and this tunnel (through scripts/systemd/
+# simulearn-tunnel.service) for a test session, and scripts/demo_down.sh stops both. Enabling the units to start at
+# boot is optional and not recommended (it keeps the model in VRAM). You can also run this script by hand.
+# Install and login steps: README.md, "Share the demo with a Cloudflare Tunnel". cloudflared is installed system-wide by you (not in the venv); this script never
 # touches Cloudflare credentials, it only starts cloudflared.
 #
 # Refuses to start when

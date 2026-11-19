@@ -1,6 +1,7 @@
 """Cloudflare Tunnel for the desktop demo (issue #15): scripts/tunnel.sh, the example config and the systemd unit.
 
-A stub `cloudflared` on PATH records its arguments, so no real tunnel is opened.
+A stub `cloudflared` on PATH records its arguments, so no real tunnel is opened. The missing-cloudflared test
+runs with a PATH holding only the tools tunnel.sh needs, so an installed cloudflared can never be found.
 """
 from __future__ import annotations
 
@@ -39,13 +40,12 @@ def free_port() -> int:
     return port
 
 
-def run_tunnel(tmp_path: Path, *args: str, stub: bool = True, env_file: str | None = None, **env: str):
+def run_tunnel(tmp_path: Path, *args: str, env_file: str | None = None, **env: str):
     """Run tunnel.sh with a stub cloudflared (prints its args) and an isolated .env."""
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir(exist_ok=True)
-    if stub:
-        (bin_dir / "cloudflared").write_text('#!/usr/bin/env bash\nprintf "ARG:%s\\n" "$@"\n')
-        (bin_dir / "cloudflared").chmod(0o755)
+    (bin_dir / "cloudflared").write_text('#!/usr/bin/env bash\nprintf "ARG:%s\\n" "$@"\n')
+    (bin_dir / "cloudflared").chmod(0o755)
     dotenv = tmp_path / "dotenv"
     if env_file is not None:
         dotenv.write_text(env_file)
@@ -112,10 +112,31 @@ def test_waits_for_the_demo_when_asked(tmp_path):
     assert out.returncode != 0 and "after waiting 1 s" in out.stderr
 
 
+# External commands tunnel.sh and scripts/_demo_env.sh run; everything else they use is a bash builtin.
+TUNNEL_TOOLS = ("bash", "dirname", "grep", "tail", "sed", "sleep")
+
+
+def tools_only_dir(tmp_path: Path) -> Path:
+    """A directory of symlinks to just TUNNEL_TOOLS, so a PATH of only this directory cannot find cloudflared."""
+    bin_dir = tmp_path / "tools"
+    bin_dir.mkdir()
+    for tool in TUNNEL_TOOLS:
+        real = shutil.which(tool)
+        assert real is not None, f"{tool} is needed to run tunnel.sh"
+        (bin_dir / tool).symlink_to(real)
+    return bin_dir
+
+
 def test_missing_cloudflared_points_at_the_readme(tmp_path, listener):
-    if any(Path(d, "cloudflared").exists() for d in ("/usr/bin", "/bin")):
-        pytest.skip("cloudflared is installed system-wide here; the test would open a real tunnel")
-    out =run_tunnel(tmp_path, stub=False, DEMO_PASSWORD="x", DEMO_PORT=str(listener))
+    # Runs even where cloudflared is installed: PATH holds only the tools tunnel.sh needs, so a real cloudflared
+    # (in /usr/bin, /usr/local/bin, ~/.local/bin, ...) can never be found or started.
+    bin_dir = tools_only_dir(tmp_path)
+    env = {k: v for k, v in os.environ.items() if not k.startswith(("DEMO_", "TUNNEL_"))}
+    env.update({"PATH": str(bin_dir), "SIMULEARN_ENV_FILE": str(tmp_path / "dotenv"),
+                "DEMO_PASSWORD": "x", "DEMO_PORT": str(listener)})
+    assert shutil.which("cloudflared", path=env["PATH"]) is None
+    out = subprocess.run([str(bin_dir / "bash"), str(TUNNEL)], env=env, capture_output=True, text=True,
+                         timeout=10, cwd=tmp_path)
     assert out.returncode != 0
     assert "cloudflared" in out.stderr and "README" in out.stderr
 
