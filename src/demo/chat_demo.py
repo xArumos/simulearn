@@ -7,7 +7,8 @@ You type the adult's lines and pick the child's age (one LoRA adapter per age bu
 configs/demo.yaml; ages without an adapter are hidden). Each model keeps its own conversation history,
 trimmed like in training: the last 6 turns including the new adult line. Same system prompt and decoding
 as evaluation (temperature 0.7, top-p 0.9, max 60 new tokens). <SILENCE FOR X SECONDS> is shown as a
-visible pause. Runs on the GPU in bf16 (locally, or ZeroGPU on the hosted Space), or on the CPU in fp32. Nothing is pre-filled:
+visible pause. Runs on the GPU in bf16 (locally, or ZeroGPU on the hosted Space), or on the CPU in fp32. With
+load_in_4bit: true in the config it runs in 4-bit NF4 on a local CUDA GPU only (QLoRA models, D11). Nothing is pre-filled:
 no CHILDES text is shipped in the demo.
 
 Optional environment variables: MONGODB_URI saves chats and 👍/👎 ratings (src/demo/store.py);
@@ -85,6 +86,19 @@ def render(text: str) -> str:
     return SILENCE_RE.sub(lambda m: f"*(…pauses {m.group(1)} s…)*", text).strip() or "*(no reply)*"
 
 
+def check_4bit(load_in_4bit: bool, device: str) -> None:
+    """4-bit (bitsandbytes NF4) needs a real CUDA GPU at load time. ZeroGPU only lends one inside @spaces.GPU
+    calls, so the model can't be quantized at startup there."""
+    if not load_in_4bit:
+        return
+    if os.getenv("SPACES_ZERO_GPU"):
+        raise SystemExit("4-bit loading (load_in_4bit) is not supported on the ZeroGPU Space: set load_in_4bit: false in "
+                         "configs/demo.yaml and use a model that fits in bf16, or run the demo on the desktop GPU.")
+    if device != "cuda":
+        raise SystemExit(f"4-bit loading (load_in_4bit) needs a CUDA GPU, but the demo is running on {device}. Run it on a GPU "
+                         "(--device cuda) or set load_in_4bit: false in configs/demo.yaml.")
+
+
 class Demo:
     def __init__(self, cfg: dict, adapters: dict[int, dict], device: str | None = None):
         """device=None picks cuda if available. ZeroGPU passes "cuda" explicitly: its GPU only exists inside
@@ -94,17 +108,29 @@ class Demo:
         self.cfg, self.adapters = cfg, adapters
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         cuda = self.device == "cuda"
+        four_bit = bool(cfg.get("load_in_4bit"))
+        check_4bit(four_bit, self.device)
         self.tok = load_tokenizer(cfg["base_model"])
-        base = load_model({"name": cfg["base_model"], "dtype": "bfloat16" if cuda else "float32", "device_map": "cpu"})
+        if four_bit:
+            # 4-bit NF4 (DECISIONS.md D11), the form the QLoRA adapters were trained on. bitsandbytes 4-bit models
+            # can't be moved with .to(), so the base is quantized straight onto the GPU and the adapters load there too.
+            base = load_model({"name": cfg["base_model"], "dtype": "bfloat16", "device_map": "cuda", "load_in_4bit": True})
+            adapter_device = "cuda"
+        else:
+            base = load_model({"name": cfg["base_model"], "dtype": "bfloat16" if cuda else "float32", "device_map": "cpu"})
+            adapter_device = "cpu"
         from peft import PeftModel
 
         ages = sorted(adapters)
-        self.model = PeftModel.from_pretrained(base, str(adapters[ages[0]]["path"]), adapter_name=f"age{ages[0]}", torch_device="cpu")
+        self.model = PeftModel.from_pretrained(base, str(adapters[ages[0]]["path"]), adapter_name=f"age{ages[0]}",
+                                               torch_device=adapter_device)
         for age in ages[1:]:
-            self.model.load_adapter(str(adapters[age]["path"]), adapter_name=f"age{age}", torch_device="cpu")
-        # Everything is loaded on the CPU (torch_device="cpu", or PEFT picks cuda itself) and moved in one .to():
-        # ZeroGPU's startup cuda emulation can't read adapter files straight onto cuda ("No CUDA GPUs are available").
-        self.model.to(self.device).eval()
+            self.model.load_adapter(str(adapters[age]["path"]), adapter_name=f"age{age}", torch_device=adapter_device)
+        if not four_bit:
+            # bf16/fp32: everything is loaded on the CPU and moved in one .to(): ZeroGPU's startup cuda emulation
+            # can't read adapter files straight onto cuda ("No CUDA GPUs are available").
+            self.model.to(self.device)
+        self.model.eval()
         self.lock = threading.Lock()  # set_adapter + generate must not interleave between users
         self.seed = 1234
 
