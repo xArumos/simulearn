@@ -52,6 +52,11 @@ command -v systemctl >/dev/null 2>&1 || die "systemctl is not on PATH. Turn on s
 demo_password_set "$ENV_FILE" \
   || die "DEMO_PASSWORD is empty. Set it in .env before putting the demo on the internet."
 
+if systemctl --user is-active --quiet simulearn-product; then
+  die "the educator product is running (simulearn-product). The demo and the product don't fit on the GPU" \
+      "together. Stop it first: bash scripts/product_down.sh --keep-db"
+fi
+
 if [ "$USE_DB" = 1 ]; then
   command -v docker >/dev/null 2>&1 \
     || die "docker is not on PATH. Install Docker (README.md, \"Local MongoDB\") or run with --no-db."
@@ -75,7 +80,7 @@ systemctl --user is-active --quiet "$DEMO_UNIT" && demo_was_active=1
 systemctl --user is-active --quiet "$TUNNEL_UNIT" && tunnel_was_active=1
 START="$(date '+%Y-%m-%d %H:%M:%S')"
 
-say "starting $TUNNEL_UNIT (it starts $DEMO_UNIT too)"
+say "starting $DEMO_UNIT and $TUNNEL_UNIT"
 systemctl --user start "$TUNNEL_UNIT" "$DEMO_UNIT" \
   || die "systemctl --user start failed. See: systemctl --user status $DEMO_UNIT $TUNNEL_UNIT"
 

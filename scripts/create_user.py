@@ -9,6 +9,7 @@ and the process list. Talks to MongoDB through MONGODB_URI / MONGODB_DATABASE, f
     python scripts/create_user.py enable jdoe
     python scripts/create_user.py reset-password jdoe # signs out every open session
     python scripts/create_user.py list
+    python scripts/create_user.py has-admin           # exit 0 if an active admin exists (scripts/serve_product.sh)
 """
 from __future__ import annotations
 
@@ -34,6 +35,7 @@ def build_parser() -> argparse.ArgumentParser:
                             ("reset-password", "set a new password (asks for it)")):
         sub.add_parser(name, help=help_text).add_argument("username")
     sub.add_parser("list", help="list accounts")
+    sub.add_parser("has-admin", help="exit 0 when at least one active admin exists, else 1 (prints no accounts)")
     return parser
 
 
@@ -55,7 +57,10 @@ def auth_from_env() -> Auth:
     if not uri:
         sys.exit("MONGODB_URI is not set (shell or .env).")
     client = MongoClient(uri, serverSelectionTimeoutMS=5000)
-    client.admin.command("ping")
+    try:
+        client.admin.command("ping")
+    except Exception as e:
+        sys.exit(f"Can't reach MongoDB ({type(e).__name__}). Is it running? (docker compose up -d)")
     return Auth(client[os.getenv("MONGODB_DATABASE", "simulearn")])
 
 
@@ -70,6 +75,13 @@ def main(argv: Optional[list[str]] = None, auth: Optional[Auth] = None) -> int:
             created = u["created_at"].strftime("%Y-%m-%d %H:%M")
             print(f"{u['username']:<24} {u['role']:<9} {state:<9} {created:<17} {u['display_name']}")
         return 0
+
+    if args.command == "has-admin":
+        if any(u["role"] == "admin" and not u.get("disabled") for u in auth.list_users()):
+            return 0
+        print("No active admin account. Create one: python scripts/create_user.py create <username> --role admin",
+              file=sys.stderr)
+        return 1
 
     if args.command != "create" and auth.get_user(args.username) is None:
         print(f"No user {args.username!r}.", file=sys.stderr)

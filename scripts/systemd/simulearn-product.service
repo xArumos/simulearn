@@ -1,0 +1,28 @@
+# systemd USER service for the SimuLearn educator product (WSL2 on the desktop), run on demand. Install it once
+# (README.md, "Run the product"), then start and stop it with scripts/product_up.sh and scripts/product_down.sh.
+# "systemctl --user enable" is optional and not recommended: starting at boot keeps the model in GPU memory.
+# Edit the two repo paths below if the repo is not at ~/dev/simulearn.
+# MongoDB runs in Docker, not as a unit, so it can't be ordered here: product_up.sh starts it first, and a start
+# that finds MongoDB not ready yet fails and is retried (Restart=on-failure).
+# Secrets are NOT set here: the server reads MONGODB_URI from the repo's git-ignored .env. product_up.sh --no-save
+# sets SIMULEARN_SAVE_CHATS=0 in the user manager's environment (systemctl --user set-environment).
+
+[Unit]
+Description=SimuLearn educator product (FastAPI + frontend on 127.0.0.1:8000)
+After=network-online.target
+# Give up after 5 failed starts in 10 minutes (e.g. no admin account, frontend not built) instead of looping forever.
+StartLimitIntervalSec=600
+StartLimitBurst=5
+
+[Service]
+Type=simple
+WorkingDirectory=%h/dev/simulearn
+ExecStart=/bin/bash %h/dev/simulearn/scripts/serve_product.sh
+Restart=on-failure
+RestartSec=15
+# Loading the model takes a while on the first start (download into ~/.cache/huggingface).
+TimeoutStartSec=600
+TimeoutStopSec=30
+
+[Install]
+WantedBy=default.target
