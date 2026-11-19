@@ -14,7 +14,8 @@
 #        Phase 2  Llama-8B QLoRA ep1; train -> evaluate
 #        Phase 3  the same three on the age-4 bucket; each train -> evaluate
 # The Qwen and SmolLM2 configs in configs/hpg/ are the record of past runs and are not in the chain. Qwen must never
-# be run on HiPerGator (POLICIES.md).
+# be run on HiPerGator (POLICIES.md). Every config's model (and adapter base model) goes through
+# src/utils/model_policy.py before anything is queued; a prohibited model stops the whole submission.
 # Every run writes to experiments/<stamp>_<run_name>/ (SLURM logs as slurm-<kind>-<jobid>.out there too).
 #
 # Options:
@@ -24,6 +25,7 @@
 #                      train -> evaluate for a training config, a single eval job for a Phase 0 baseline
 #   --stamp STAMP      run-id prefix (default: current YYYYMMDD-HHMM)
 #   --env-file FILE    settings file (default: scripts/slurm/hpg.env, or $HPG_ENV_FILE)
+# Environment: PYTHON (default python3) runs the model-policy check; it needs only the standard library.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -41,7 +43,7 @@ while [ $# -gt 0 ]; do
     --only) ONLY="${2:?--only needs a run_name}"; shift ;;
     --stamp) STAMP="${2:?--stamp needs a value}"; shift ;;
     --env-file) ENV_FILE="${2:?--env-file needs a value}"; shift ;;
-    -h|--help) sed -n '2,26p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,29p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 2 ;;
   esac
   shift
@@ -102,6 +104,20 @@ check_config() {
   local cfg="$1"
   [ -f "$cfg" ] || { echo "error: config $cfg does not exist" >&2; exit 1; }
   [ -n "$(run_name "$cfg")" ] || { echo "error: $cfg has no run_name" >&2; exit 1; }
+}
+
+config_value() {  # config_value CONFIG KEY -> value of "  KEY:" in the model: block, without quotes
+  sed -n "/^model:/,/^[^[:space:]]/s/^  $2:[[:space:]]*//p" "$1" | tr -d "\"'" | head -1
+}
+
+check_model_policy() {  # POLICIES.md §1: refuse prohibited models (and adapters trained on them) before queuing
+  local cfg="$1" name adapter args
+  name="$(config_value "$cfg" name)"
+  [ -n "$name" ] || { echo "error: $cfg has no model.name" >&2; exit 1; }
+  args=("$name" --context "$cfg (run_name $(run_name "$cfg"))")
+  adapter="$(config_value "$cfg" adapter)"
+  if [ -n "$adapter" ] && [ "$adapter" != null ]; then args+=(--adapter "$adapter"); fi
+  "${PYTHON:-python3}" -m src.utils.model_policy "${args[@]}" || exit 3
 }
 
 check_data() {  # the processed CHILDES data is never in git; it must be copied or rebuilt on /blue first
@@ -169,6 +185,10 @@ if [ -n "$ONLY" ]; then
     if [ "$(run_name "$cfg")" = "$ONLY" ]; then ONLY_CFG="$cfg"; ONLY_KIND=train; fi
   done
   if [ -z "$ONLY_CFG" ]; then
+    # A past run outside the chain: if its model is prohibited, say so plainly rather than "unknown run".
+    for cfg in configs/hpg/*/*.yaml; do
+      if [ "$(run_name "$cfg")" = "$ONLY" ]; then check_model_policy "$cfg"; fi
+    done
     echo "error: --only $ONLY matches no run_name in the chain. Known run_names:" >&2
     for cfg in "${SMOKE_TRAIN[@]}" "${PHASE0_EVAL[@]}" "${PHASE12_TRAIN[@]}" "${PHASE3_TRAIN[@]}"; do
       echo "  $(run_name "$cfg")" >&2
@@ -185,6 +205,7 @@ else
 fi
 for cfg in "${ALL[@]}"; do
   check_config "$cfg"
+  check_model_policy "$cfg"
   if [ "$DRY_RUN" = 0 ]; then check_data "$cfg"; fi
 done
 if [ "$DRY_RUN" = 0 ] && ! command -v sbatch >/dev/null 2>&1; then

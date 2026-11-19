@@ -4,8 +4,11 @@ from __future__ import annotations
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
+from src.utils.model_policy import check_model
+
 
 def load_tokenizer(name: str):
+    check_model(name)  # POLICIES.md §1: refuse before anything is downloaded
     tok = AutoTokenizer.from_pretrained(name)
     if tok.pad_token is None:
         tok.pad_token = tok.eos_token
@@ -13,6 +16,7 @@ def load_tokenizer(name: str):
 
 
 def load_model(mcfg: dict, for_training: bool = False):
+    check_model(mcfg["name"], mcfg.get("adapter"))  # POLICIES.md §1: refuse before anything is downloaded
     dtype = getattr(torch, mcfg.get("dtype", "bfloat16"))
     kwargs = {"dtype": dtype, "device_map": mcfg.get("device_map", "cuda"),
               "attn_implementation": mcfg.get("attn_implementation", "sdpa")}
