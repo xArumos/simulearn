@@ -1,0 +1,33 @@
+# Practice scenes for the educator product (src/product/server.py, GET /api/config).
+# All invented by the team for practice; none of this text comes from CHILDES.
+# A scenario only sets the scene for the educator: it does NOT change the child model's system prompt,
+# so the model always runs under its training conditions.
+scenarios:
+  - id: block-play
+    title: Block play
+    scene: The child is building a tall tower with wooden blocks on the rug.
+    opening_line: Wow, that's getting tall! What are you building?
+  - id: snack-time
+    title: Snack time
+    scene: The child is sitting at the table with crackers and apple slices.
+    opening_line: Which one do you want to try first, the crackers or the apples?
+  - id: picture-book
+    title: Reading a picture book
+    scene: You and the child are looking at a picture book about animals on a farm.
+    opening_line: Look at this page. What do you think the cow is doing?
+  - id: sharing-a-toy
+    title: Sharing a toy
+    scene: Another child wants a turn with the toy truck the child is playing with.
+    opening_line: I see Sam would like a turn with the truck. What could we do?
+  - id: art-table
+    title: At the art table
+    scene: The child is painting with bright colors at the easel.
+    opening_line: Tell me about your painting. What colors did you use?
+  - id: cleanup-time
+    title: Clean-up time
+    scene: Play time is over and the toys need to go back on the shelves.
+    opening_line: It's time to clean up. Can you help me put the cars away?
+  - id: outdoor-play
+    title: Outdoor play
+    scene: The child just came down the slide on the playground.
+    opening_line: That looked fast! How did it feel going down the slide?
