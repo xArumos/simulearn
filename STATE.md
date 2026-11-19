@@ -1,6 +1,6 @@
 # STATE.md — live session handoff
 
-_Last updated: 2026-11-18 (session 6, synced after PRs #22, #23, #24)_
+_Last updated: 2026-11-18 (session 6, synced after PRs #25, #26)_
 
 **Active work is tracked in GitHub Issues** (https://github.com/xArumos/simulearn/issues). This file is the handoff summary; `/sync-issues` keeps it current. Workflow: `CONTRIBUTING.md`, CLAUDE.md §14.
 
@@ -10,6 +10,7 @@ _Last updated: 2026-11-18 (session 6, synced after PRs #22, #23, #24)_
 - #8 done (closed): HiPerGator set up (account/QOS `ddever`, partition `hpg-rtx6000`, RTX PRO 6000 96 GB, repo+venv+hf_cache+data under `/blue/ddever/<user>`); Dr. Dever approved CHILDES data on HiPerGator (verbal, team meeting). Smoke jobs all COMPLETED (1.5B LoRA val loss 2.447, 6.7 GB; 7B QLoRA 2.384, 12.9 GB; repro identical). **Full chain submitted, stamp `20261118-2027`** (#11).
 - PR #23 (#10): `configs/hpg/phase3/qwen1.5b_lora_ep1_age4_hpg.yaml` (run-3 recipe on age4), added to `submit_all.sh` after smoke; new `--only <run_name>` flag queues one config's train+eval alone (age-4 was not in the running chain).
 - PR #24 (#14): `scripts/serve_demo.sh` (127.0.0.1:7860, cuda if visible else cpu, needs `DEMO_PASSWORD`, starts with saving OFF if Mongo down), `scripts/systemd/simulearn-demo.service` (user unit, restart-on-failure), `chat_demo.py` `--host/--device/--require-password`, DECISIONS D10, README steps. GPU selftest 0.2-0.3 s/reply, 3 GB VRAM. 107 tests pass.
+- PR #26 (#15): `scripts/tunnel.sh` (quick mode = temporary trycloudflare URL; named mode = `scripts/cloudflared/config.yml`), refuses without DEMO_PASSWORD / listening demo / cloudflared; `config.yml.example`; optional `scripts/systemd/simulearn-tunnel.service` (after the demo unit); real config + credentials git-ignored; README "Share the demo with a Cloudflare Tunnel". Tested with a stub cloudflared only (132 tests pass); live check not yet done.
 - PR #21 (#13): local MongoDB. `docker-compose.yml` (Mongo 7 on 127.0.0.1:27017, named volume), `.env.example`, `backend/app/env.py` loads `.env` for demo + backend, `scripts/db_backup.sh` (backups to `~/simulearn-backups`), README "Local MongoDB". Backup only tested with a stand-in `mongodump`; Docker not installed on the desktop yet.
 - Merged as PR #7. Planned as issues #8-#18 (tracking issue #18). **Change of plans:** training moves to HiPerGator (Track A, first), and the demo + MongoDB move from the HF Space/Atlas to Justin's desktop behind a Cloudflare Tunnel, with the Space kept as a fallback (Track B).
 
@@ -86,14 +87,14 @@ From Claude's Windows shell: write a .sh to the scratchpad, then run `wsl.exe -d
 ## Next planned actions
 Task list lives on GitHub; tracking issue #18.
 1. Track A (HiPerGator, do first): #8, #9, #10 done → #11 chain `20261118-2027` running; queue age-4 with `submit_all.sh --only qwen1.5b_lora_ep1_age4_hpg --stamp 20261118-2027` (Justin) → #12 collect results (rsync back without `checkpoints/`).
-2. Track B (self-hosted demo): #13, #14 done → install the demo service (Justin) → #15 tunnel scripts → #16 Cloudflare + external test (Justin) → #17 Pages + README.
+2. Track B (self-hosted demo): #13, #14 done → #15 done → install the demo service (Justin) → #16 Cloudflare + external test (Justin) → #17 Pages + README.
 3. Still open, not yet issues: Phase 1 ratings → pick run 3 vs 4 (`python -m src.eval.score_ratings --phase phase1`), optional runs 5-6, Phase 1 report. Rebuild the meeting notebook after new results (`python scripts/build_meeting_notebook.py`).
 
 ## Waiting on user
 - **#11** on HiPerGator: `git pull`, then queue age-4 via `--only` (above); watch the `20261118-2027` chain, then rsync results back for #12.
 - **Demo service (#14 follow-up):** `systemd=true` in `/etc/wsl.conf` + `wsl --shutdown`, set `DEMO_PASSWORD` in `.env`, copy unit to `~/.config/systemd/user`, enable it, `loginctl enable-linger` (README).
 - Install Docker in WSL, `docker compose up -d`, then run `scripts/db_backup.sh` once to verify backups for real (#13 follow-up).
-- **#16** Cloudflare account + tunnel on the desktop, external test (after #14, #15).
+- **#16** install `cloudflared` (README), run `bash scripts/tunnel.sh` with the demo up, open the trycloudflare URL from outside the LAN; named tunnel needs a Cloudflare account + domain.
 - **Blind ratings:** fill in `reports/phase1/review_ratings.csv` (28 items x 4 replies; 1-5 child-likeness, coherence, age-appropriateness). Each teammate can rate their own copy. Don't open `review_key.json` until done. Local only, git-ignored (CHILDES text).
 - Decide whether to spend runs 5-6 before or after the ratings.
 - Non-blocking: Dr. Dever to confirm Cameron (Eng-AAE). Ask Dante to delete the public `Dante7162-patch-1` branch (contains `Gleason.zip`).
