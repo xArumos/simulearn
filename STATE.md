@@ -90,12 +90,11 @@ From Claude's Windows shell: write a .sh to the scratchpad, then run `wsl.exe -d
 
 ## Next planned actions
 Task list lives on GitHub; tracking issue #18.
-1. Track A (HiPerGator): #8-#12 done (close #11). Possible next: add the 7B adapter to the blind review packet (not yet an issue); age-4 adapter into the demo (upload needs Justin's OK).
+1. Track A (HiPerGator): #8-#12 done. Possible next: add the 7B adapter to the blind review packet (not yet an issue); age-4 adapter into the demo (upload needs Justin's OK).
 2. Track B (self-hosted demo): #13, #14 done → #15 done → install the demo service (Justin) → #16 Cloudflare + external test (Justin) → #17 Pages + README.
 3. Still open, not yet issues: Phase 1 ratings → pick run 3 vs 4 (`python -m src.eval.score_ratings --phase phase1`), optional runs 5-6, Phase 1 report. Rebuild the meeting notebook after new results (`python scripts/build_meeting_notebook.py`).
 
 ## Waiting on user
-- **Close #11** (both boxes ticked, job IDs commented).
 - **Demo service (#14 follow-up):** `systemd=true` in `/etc/wsl.conf` + `wsl --shutdown`, set `DEMO_PASSWORD` in `.env`, copy unit to `~/.config/systemd/user`, enable it, `loginctl enable-linger` (README).
 - Install Docker in WSL, `docker compose up -d`, then run `scripts/db_backup.sh` once to verify backups for real (#13 follow-up).
 - **#16** install `cloudflared` (README), run `bash scripts/tunnel.sh` with the demo up, open the trycloudflare URL from outside the LAN; named tunnel needs a Cloudflare account + domain.
