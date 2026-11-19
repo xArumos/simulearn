@@ -7,6 +7,18 @@ errors are logged and swallowed.
 Each side of the side-by-side demo (untrained / fine-tuned) is its own conversation in `conversations` +
 `transcript_iterations`, one iteration per turn (the adult line + that side's reply), linked by
 metadata.session. Ratings go to a separate `feedback` collection, because transcript iterations are append-only.
+`feedback.conversation_id` is an ObjectId, like `conversations._id` and `transcript_iterations.conversation_id`,
+so a rating joins to its conversation with a plain `find` or `$lookup`.
+
+One-off migration for feedback rows saved before this was fixed (they hold conversation_id as a string).
+Run it once in mongosh against the demo database; it is idempotent (only string ids are touched) and skips any
+string that is not a valid ObjectId:
+
+    db.feedback.find({conversation_id: {$type: "string"}}).forEach(doc => {
+      if (/^[0-9a-fA-F]{24}$/.test(doc.conversation_id))
+        db.feedback.updateOne({_id: doc._id}, {$set: {conversation_id: ObjectId(doc.conversation_id)}});
+    });
+    db.feedback.countDocuments({conversation_id: {$type: "string"}})   // expect 0
 """
 from __future__ import annotations
 
@@ -86,8 +98,11 @@ class DemoStore:
         if not self.enabled or not conversation_id:
             return False
         try:
+            # same conversion the transcript store uses, so feedback joins to conversations._id;
+            # an invalid id raises here and is logged below
+            oid = self.transcripts._object_id(conversation_id)
             self.feedback.insert_one({
-                "conversation_id": conversation_id, "version": version, "side": side, "owner_id": owner_id,
+                "conversation_id": oid, "version": version, "side": side, "owner_id": owner_id,
                 "liked": bool(liked), "reply": reply, "note": note.strip(),
                 "created_at": datetime.now(timezone.utc)})
             return True
