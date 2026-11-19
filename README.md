@@ -16,6 +16,44 @@ The side-by-side chat demo (untrained Qwen vs our fine-tuned child model, one ad
 
 Without them, nothing is saved and there is no password. Stop the demo before training, because both together don't fit in 12 GB VRAM.
 
+### Always-on demo on the desktop (main way to try the model, DECISIONS.md D10)
+
+`bash scripts/serve_demo.sh` runs the same demo as a service:
+- reads `.env` (see "Local MongoDB" below) and **refuses to start if `DEMO_PASSWORD` is empty**;
+- loads every age adapter listed in `configs/demo.yaml` whose folder exists under `experiments/`;
+- listens on `127.0.0.1:7860` only. A tunnel exposes it to testers; other machines on the LAN can't reach it. Windows browsers on the same PC still open http://localhost:7860 through WSL's localhost forwarding;
+- uses the GPU when one is visible (about 3 GiB VRAM), else the CPU (fine-tuned reply ~2 s, untrained ~17 s). `CUDA_VISIBLE_DEVICES="" bash scripts/serve_demo.sh` forces the CPU;
+- starts even when MongoDB is down, and prints `saving OFF` (chats are then not saved).
+
+Optional settings: `DEMO_PORT`, `DEMO_HOST`, `DEMO_DEVICE` (`auto`/`cpu`/`cuda`), `DEMO_CONFIG`. Extra arguments go to `src/demo/chat_demo.py`, e.g. `bash scripts/serve_demo.sh --selftest`.
+
+**Install as a systemd user service (one time, inside WSL, done by you):**
+1. Turn on systemd in WSL: `sudo nano /etc/wsl.conf` and add
+   ```ini
+   [boot]
+   systemd=true
+   ```
+   then in Windows PowerShell run `wsl --shutdown` and open Ubuntu again. Check with `systemctl --user status` (no error = working).
+2. Set `DEMO_PASSWORD` in `.env` (`cp .env.example .env` first if you haven't).
+3. If the repo is not at `~/dev/simulearn`, edit the two paths in `scripts/systemd/simulearn-demo.service`.
+4. Install and start it:
+   ```bash
+   mkdir -p ~/.config/systemd/user
+   cp scripts/systemd/simulearn-demo.service ~/.config/systemd/user/
+   systemctl --user daemon-reload
+   systemctl --user enable --now simulearn-demo
+   sudo loginctl enable-linger "$USER"   # start it when WSL starts, without waiting for a login shell
+   ```
+5. Check: `systemctl --user status simulearn-demo` and `journalctl --user -u simulearn-demo -f` (look for `Demo: ages [...] on cuda` and `serving http://127.0.0.1:7860`).
+
+**Day to day:**
+- `systemctl --user restart simulearn-demo` after pulling new demo code, a new adapter or a `.env` change.
+- `systemctl --user stop simulearn-demo` before any local GPU job (both don't fit in 12 GB); `start` it afterwards.
+- `systemctl --user disable --now simulearn-demo` to turn it off for good; `rm ~/.config/systemd/user/simulearn-demo.service` to remove it.
+- It restarts by itself after a crash (`Restart=on-failure`), but gives up after 5 failed starts in 10 minutes (for example a missing password). Fix the cause, then `systemctl --user reset-failed simulearn-demo` and `start` it.
+
+**Limits:** the demo is only up while the PC is on and WSL is running. WSL stops when Windows sleeps or shuts down, and may stop the Ubuntu VM when no WSL window is open, so disable sleep on the desktop and keep a WSL terminal open while testers need it. The Hugging Face Space (below) stays as the fallback.
+
 **Hosted (one-time setup, done by you; never paste tokens or passwords into a chat or into git):**
 1. Dr. Dever's OK: done 2026-11-03 (DECISIONS.md D9).
 2. **Hugging Face:** create an account, then in WSL run `hf auth login`.
