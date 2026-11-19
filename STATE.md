@@ -1,17 +1,19 @@
 # STATE.md — live session handoff
 
-_Last updated: 2026-11-18 (session 6, synced after PRs #25, #26)_
+_Last updated: 2026-11-19 (session 6, synced after PRs #27, #28)_
 
 **Active work is tracked in GitHub Issues** (https://github.com/xArumos/simulearn/issues). This file is the handoff summary; `/sync-issues` keeps it current. Workflow: `CONTRIBUTING.md`, CLAUDE.md §14.
 
 ## Session 6 (2026-11-18): issue-driven workflow
 - Added `CONTRIBUTING.md`, issue/PR templates, CI (`.github/workflows/tests.yml` + `requirements-ci.txt`, CPU-only; 75 tests pass in a fresh venv), workflow labels, and `.claude/` (agent `issue-worker`; skills `/plan-issues`, `/work-issue`, `/sync-issues`; project permissions). CLAUDE.md §14.
 - PR #20 (#9): HiPerGator SLURM. `scripts/env_hpg.sh`, `scripts/slurm/{train,evaluate}.sbatch`, `submit_all.sh` (smoke → Phase 0/1/2 chain, `--dry-run`/`--smoke-only`), settings in git-ignored `scripts/slurm/hpg.env` (placeholders in `.example` until #8). New `configs/hpg/phase1/qwen1.5b_lora_smoke_hpg.yaml`.
-- #8 done (closed): HiPerGator set up (account/QOS `ddever`, partition `hpg-rtx6000`, RTX PRO 6000 96 GB, repo+venv+hf_cache+data under `/blue/ddever/<user>`); Dr. Dever approved CHILDES data on HiPerGator (verbal, team meeting). Smoke jobs all COMPLETED (1.5B LoRA val loss 2.447, 6.7 GB; 7B QLoRA 2.384, 12.9 GB; repro identical). **Full chain submitted, stamp `20261118-2027`** (#11).
+- #8 done (closed): HiPerGator set up (group account/QOS in git-ignored `hpg.env`, partition `hpg-rtx6000`, RTX PRO 6000 96 GB, repo+venv+hf_cache+data on the group's blue storage); Dr. Dever approved CHILDES data on HiPerGator (verbal, team meeting). Smoke jobs all COMPLETED (1.5B LoRA val loss 2.447, 6.7 GB; 7B QLoRA 2.384, 12.9 GB; repro identical). **Full chain submitted, stamp `20261118-2027`** (#11).
 - PR #23 (#10): `configs/hpg/phase3/qwen1.5b_lora_ep1_age4_hpg.yaml` (run-3 recipe on age4), added to `submit_all.sh` after smoke; new `--only <run_name>` flag queues one config's train+eval alone (age-4 was not in the running chain).
 - PR #24 (#14): `scripts/serve_demo.sh` (127.0.0.1:7860, cuda if visible else cpu, needs `DEMO_PASSWORD`, starts with saving OFF if Mongo down), `scripts/systemd/simulearn-demo.service` (user unit, restart-on-failure), `chat_demo.py` `--host/--device/--require-password`, DECISIONS D10, README steps. GPU selftest 0.2-0.3 s/reply, 3 GB VRAM. 107 tests pass.
 - PR #26 (#15): `scripts/tunnel.sh` (quick mode = temporary trycloudflare URL; named mode = `scripts/cloudflared/config.yml`), refuses without DEMO_PASSWORD / listening demo / cloudflared; `config.yml.example`; optional `scripts/systemd/simulearn-tunnel.service` (after the demo unit); real config + credentials git-ignored; README "Share the demo with a Cloudflare Tunnel". Tested with a stub cloudflared only (132 tests pass); live check not yet done.
 - PR #21 (#13): local MongoDB. `docker-compose.yml` (Mongo 7 on 127.0.0.1:27017, named volume), `.env.example`, `backend/app/env.py` loads `.env` for demo + backend, `scripts/db_backup.sh` (backups to `~/simulearn-backups`), README "Local MongoDB". Backup only tested with a stand-in `mongodump`; Docker not installed on the desktop yet.
+- #11 done: all 16 jobs of chain `20261118-2027` COMPLETED, exit 0 (age-4 queued alone via `--only`); job IDs commented on #11.
+- PR #28 (#12): HPG results. Records (README/config/metrics/train.log/train_stats, repo-relative paths) for all 11 runs; `scripts/hpg_tables.sh` rebuilds every comparison table (`reports/phase{0,1,3}/comparison_hpg.md`, `reports/phase2/comparison.md`, `reports/phase3/age5_vs_age4_hpg.md`, `reports/hpg/{hpg_vs_local,smoke}.md`); `src/eval/compare.py` refuses mixed buckets/splits, adds a paired table flagging changes beyond the noise floor; EXPERIMENT_LOG HPG section, `reports/phase2/phase2_report.md`, `reports/phase3/phase3_findings.md`. 141 tests pass. Findings: all gates pass; HPG matches local (loss within 0.004, no ranking changes); 7B QLoRA mixed (best loss 2.110, low degeneration, but too short: median 2 words vs 3 real, KS 0.142) → keep 1.5B run-3 recipe as default, add 7B to the blind review packet; age-4 replies shorter than age-5 in the right direction but overshoot (-1.34 words vs -0.94 real).
 - Merged as PR #7. Planned as issues #8-#18 (tracking issue #18). **Change of plans:** training moves to HiPerGator (Track A, first), and the demo + MongoDB move from the HF Space/Atlas to Justin's desktop behind a Cloudflare Tunnel, with the Space kept as a fallback (Track B).
 
 ## Session 5 (2026-11-03) — everything merged into `main`
@@ -42,19 +44,21 @@ _Last updated: 2026-11-18 (session 6, synced after PRs #25, #26)_
 - **Flag for the team:** public branch `Dante7162-patch-1` contains `Gleason.zip` (likely raw CHILDES) plus executed notebooks. Ask Dante to delete that branch (TalkBank no-redistribution rule).
 
 ## Session 2 (2026-10-31 / 11-01) — summit paper + HiPerGator prep
-- Helped revise the summit paper's "AI Development and Technical Approach" paragraph (text lives in the team's Google Doc, not here). **The paper states that QLoRA of Qwen2.5-7B has been run and compared, and that all runs were done on HiPerGator. Neither is true yet. Phase 2 must run before the final submission.**
+- Helped revise the summit paper's "AI Development and Technical Approach" paragraph (text lives in the team's Google Doc, not here). The paper states that QLoRA of Qwen2.5-7B has been run and compared, and that all runs were done on HiPerGator. **Both are now true (PR #28).** The paper should describe the 7B result as mixed (best loss, replies too short), not a clear win.
 - The user now has HiPerGator access and wants **all** runs (Phase 0 baselines, Phase 1 LoRA runs 2/3/4, Phase 2 QLoRA) re-done there for a same-hardware comparison. Paused until the user says they're ready.
 - Created `configs/hpg/{phase0,phase1,phase2}/*.yaml` (9 files): copies of the local run configs with an `_hpg` run_name, plus 7B QLoRA smoke and full configs (based on run 3). Still to do: `scripts/env_hpg.sh` and `scripts/slurm/*.sbatch`. The core code needs no changes (paths are relative to the project root).
 - Liu & Fourtassi (2025, SemDial) supports "LLMs approximate child speech per utterance but diverge over multi-turn interaction (less diverse, over-aligned)". It does NOT support "adult-like". That claim comes from our own Phase 0 baselines.
 
 ## Current phase and step
-Phase 1 (LoRA): 4 of 6 runs done, nothing running. **Waiting on the user's blind ratings** of `reports/phase1/review_packet.md` (real vs strong baseline vs run 3 vs run 4). Phase 1 exit requires it.
+HiPerGator re-runs done (Phase 0/1/2 + Phase 3 age-4, PR #28); nothing running. Phase 2 (7B QLoRA) and Phase 3 (age-4) have reports. Phase 1 (LoRA): 4 of 6 local runs done. **Waiting on the user's blind ratings** of `reports/phase1/review_packet.md` (real vs strong baseline vs run 3 vs run 4). Phase 1 exit requires it.
 Live demo: `bash scripts/demo.sh` in WSL, then open http://localhost:7860 (src/demo/chat_demo.py; base Qwen vs run-3 adapter). Demo stopped after the meeting. Stop the demo before any training (both together exceed 12 GB VRAM).
 
 ## Best model so far
 **Tie between run 3 and run 4, to be settled by human ratings.**
 - Run 3 `20261016-0003_qwen1.5b_lora_ep1` (6-turn context): length KS 0.031 (best), 5.0 words, loss 2.205, "I don't know" 40-49/1,000.
 - Run 4 `20261016-1000_qwen1.5b_lora_ep1_ctx10` (10-turn context): loss 2.176 (best), ~25% fewer "I don't know" (30-34/1,000), but shorter replies (4.4-4.5 words, KS ~0.047).
+- HPG re-runs confirm the tie (`reports/hpg/hpg_vs_local.md`). 7B QLoRA `20261118-2027_qwen7b_qlora_ep1_hpg` has the best loss (2.110) but replies too short; not the new best (`reports/phase2/phase2_report.md`).
+- Age-4 adapter: `20261118-2027_qwen1.5b_lora_ep1_age4_hpg` (loss 2.154, 3.58 words vs 4.16 real, KS 0.077), local only, not uploaded.
 - Noise floor from a second-seed re-eval: marker gap ±0.004, degeneration ±0.5 pts (EXPERIMENT_LOG run 4).
 
 ## Phase 0 results (val, 1,000 contexts; full table reports/phase0/comparison.md)
@@ -86,12 +90,12 @@ From Claude's Windows shell: write a .sh to the scratchpad, then run `wsl.exe -d
 
 ## Next planned actions
 Task list lives on GitHub; tracking issue #18.
-1. Track A (HiPerGator, do first): #8, #9, #10 done → #11 chain `20261118-2027` running; queue age-4 with `submit_all.sh --only qwen1.5b_lora_ep1_age4_hpg --stamp 20261118-2027` (Justin) → #12 collect results (rsync back without `checkpoints/`).
+1. Track A (HiPerGator): #8-#12 done (close #11). Possible next: add the 7B adapter to the blind review packet (not yet an issue); age-4 adapter into the demo (upload needs Justin's OK).
 2. Track B (self-hosted demo): #13, #14 done → #15 done → install the demo service (Justin) → #16 Cloudflare + external test (Justin) → #17 Pages + README.
 3. Still open, not yet issues: Phase 1 ratings → pick run 3 vs 4 (`python -m src.eval.score_ratings --phase phase1`), optional runs 5-6, Phase 1 report. Rebuild the meeting notebook after new results (`python scripts/build_meeting_notebook.py`).
 
 ## Waiting on user
-- **#11** on HiPerGator: `git pull`, then queue age-4 via `--only` (above); watch the `20261118-2027` chain, then rsync results back for #12.
+- **Close #11** (both boxes ticked, job IDs commented).
 - **Demo service (#14 follow-up):** `systemd=true` in `/etc/wsl.conf` + `wsl --shutdown`, set `DEMO_PASSWORD` in `.env`, copy unit to `~/.config/systemd/user`, enable it, `loginctl enable-linger` (README).
 - Install Docker in WSL, `docker compose up -d`, then run `scripts/db_backup.sh` once to verify backups for real (#13 follow-up).
 - **#16** install `cloudflared` (README), run `bash scripts/tunnel.sh` with the demo up, open the trycloudflare URL from outside the LAN; named tunnel needs a Cloudflare account + domain.
