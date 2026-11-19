@@ -70,19 +70,69 @@ export interface TurnReply {
   secs: number;
 }
 
-/** POST /api/feedback answer (#59). `saved: false` means saving is off and nothing was stored. */
+/**
+ * POST /api/feedback answer (#59). `saved: false` with `ok: true` means saving is off: the rating is kept
+ * by this server process only (it shows in the reopened session until a restart). `ok: false` means saving
+ * is on but the write failed.
+ */
 export interface FeedbackResult {
-  saved?: boolean;
+  ok: boolean;
+  saved: boolean;
 }
 
+/** One row of GET /api/sessions?limit= (the user's own sessions, newest first). */
 export interface SessionSummary {
   id: string;
+  /** ISO 8601 in UTC, e.g. "2026-11-19T14:03:00.123Z". */
   created_at: string;
   age: number;
+  /** null = free practice (no scenario), or a scenario no longer in the config. */
   scenario_title: string | null;
+  /** Number of turns (adult line + child reply). */
   turns: number;
+  /** Whether the untrained side is on (as the session was left). */
   compare: boolean;
 }
+
+/** The user's latest rating of one reply. */
+export interface Rating {
+  liked: boolean;
+  /** "" when no note was given. */
+  note: string;
+}
+
+/** One side's reply in a reopened session. */
+export interface SessionReply {
+  /** The raw reply; may contain <SILENCE FOR X SECONDS> tags; "" = the model said nothing. */
+  text: string;
+  /** Seconds of a leading silence tag, else null. */
+  pause_s: number | null;
+  /** Generation time in seconds (null if unknown). */
+  secs: number | null;
+  rating: Rating | null;
+}
+
+export interface SessionExchange {
+  turn: number;
+  adult: string;
+  child: SessionReply;
+  /** null when compare was off at this turn. */
+  untrained: SessionReply | null;
+}
+
+/** GET /api/sessions/{id}: the full session for a read-only reopen. Also the JSON export. */
+export interface SessionDetail extends SessionSummary {
+  /** The config's label for the age, e.g. "60-71 months"; may be "". */
+  age_label: string;
+  scenario_id: string | null;
+  compare_started_turn: number | null;
+  /** What produced each side: the child model ("age5:<adapter run>") and the base model; null = none. */
+  models: { child: string | null; untrained: string | null };
+  /** In turn order. */
+  exchanges: SessionExchange[];
+}
+
+export type ExportFormat = "txt" | "json";
 
 export interface FeedbackIn {
   session_id: string;
@@ -169,10 +219,12 @@ export const api = {
     request<SessionState>("PATCH", `/api/sessions/${encodeURIComponent(sessionId)}`, { compare }),
 
   // #59
-  feedback: (f: FeedbackIn) => request<FeedbackResult | null>("POST", "/api/feedback", f),
+  feedback: (f: FeedbackIn) => request<FeedbackResult>("POST", "/api/feedback", f),
+  /** The user's own sessions, newest first (limit 1-200). With saving off: only this server process's. */
   sessions: (limit = 50) => request<SessionSummary[]>("GET", `/api/sessions?limit=${limit}`),
-  session: (sessionId: string) => request<unknown>("GET", `/api/sessions/${encodeURIComponent(sessionId)}`),
-  exportUrl: (sessionId: string, format: "txt" | "json") =>
+  session: (sessionId: string) => request<SessionDetail>("GET", `/api/sessions/${encodeURIComponent(sessionId)}`),
+  /** A download link (the server sends Content-Disposition with a filename); use it as an <a href>. */
+  exportUrl: (sessionId: string, format: ExportFormat) =>
     `/api/sessions/${encodeURIComponent(sessionId)}/export?format=${format}`,
 };
 
