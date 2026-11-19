@@ -1,16 +1,25 @@
 """GPU smoke test: load a model in bf16 (and optionally 4-bit), generate a few tokens, report VRAM.
 
 Usage (inside WSL, after `source scripts/env_wsl.sh`):
-    python scripts/gpu_smoke_test.py --model Qwen/Qwen2.5-1.5B-Instruct --also-4bit
+    python scripts/gpu_smoke_test.py --model meta-llama/Llama-3.2-1B-Instruct --also-4bit
+
+The model goes through src/utils/model_policy.py first (POLICIES.md §1), so a prohibited one is refused before any
+download.
 """
 import argparse
+import sys
 import time
+from pathlib import Path
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from src.utils.model_policy import check_model  # noqa: E402
+
 
 def run(model_name: str, quant: str) -> None:
+    check_model(model_name)  # POLICIES.md §1, before from_pretrained
     torch.cuda.empty_cache()
     torch.cuda.reset_peak_memory_stats()
     kwargs = {"dtype": torch.bfloat16, "device_map": "cuda"}
@@ -47,9 +56,10 @@ def run(model_name: str, quant: str) -> None:
 
 def main() -> None:
     p = argparse.ArgumentParser()
-    p.add_argument("--model", default="Qwen/Qwen2.5-1.5B-Instruct")
+    p.add_argument("--model", default="meta-llama/Llama-3.2-1B-Instruct")
     p.add_argument("--also-4bit", action="store_true")
     args = p.parse_args()
+    check_model(args.model)  # refuse before touching the GPU
     print(f"torch {torch.__version__} | CUDA {torch.version.cuda} | {torch.cuda.get_device_name(0)}")
     free, total = torch.cuda.mem_get_info()
     print(f"GPU memory free {free / 2**30:.2f} / {total / 2**30:.2f} GiB before loading")
