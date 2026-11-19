@@ -17,7 +17,11 @@ pytestmark = pytest.mark.skipif(shutil.which("bash") is None, reason="needs bash
 SLURM = PROJECT_ROOT / "scripts" / "slurm"
 SCRIPTS = [PROJECT_ROOT / "scripts" / "env_hpg.sh", SLURM / "submit_all.sh", SLURM / "train.sbatch", SLURM / "evaluate.sbatch"]
 STAMP = "20990101-0000"
-SMOKE = {"configs/hpg/phase1/qwen1.5b_lora_smoke_hpg.yaml", "configs/hpg/phase2/qwen7b_qlora_smoke_hpg.yaml"}
+SMOKE = {"configs/hpg/phase1/llama1b_lora_smoke_hpg.yaml", "configs/hpg/phase2/llama8b_qlora_smoke_hpg.yaml"}
+LLAMA = {"1b": "meta-llama/Llama-3.2-1B-Instruct", "3b": "meta-llama/Llama-3.2-3B-Instruct",
+         "8b": "meta-llama/Llama-3.1-8B-Instruct"}
+# Run 3, the recipe every D11 Llama run copies. Only the YAML is read; the Qwen model is never loaded (POLICIES.md).
+RUN3 = "configs/hpg/phase1/qwen1.5b_lora_ep1_hpg.yaml"
 JOB_LINE = re.compile(r"^(JOB_\d+) = (sbatch .*)$")
 
 
@@ -61,10 +65,22 @@ def test_bash_syntax(script: Path):
     assert r.returncode == 0, r.stderr
 
 
-def test_every_hpg_config_is_in_the_chain_and_loads(chain):
+def test_chain_is_every_llama_config_and_nothing_else(chain):
+    """D11: the chain runs every Llama config in configs/hpg/; the Qwen and SmolLM2 configs stay only as a record."""
     used = {j["config"] for j in chain.values()}
-    on_disk = {str(p.relative_to(PROJECT_ROOT)) for p in (PROJECT_ROOT / "configs" / "hpg").rglob("*.yaml")}
-    assert used == on_disk
+    on_disk = {str(p.relative_to(PROJECT_ROOT)) for p in (PROJECT_ROOT / "configs" / "hpg").rglob("llama*.yaml")}
+    assert used == on_disk and len(on_disk) == 14
+    for cfg in used:
+        assert load_config(PROJECT_ROOT / cfg)["model"]["name"] in LLAMA.values(), cfg
+
+
+def test_dry_run_mentions_no_qwen_or_smollm2():
+    r = run_submit("--dry-run", "--stamp", STAMP)
+    assert r.returncode == 0, r.stderr
+    assert not re.search(r"qwen|smol", r.stdout + r.stderr, re.I)
+
+
+def test_every_chain_config_loads(chain):
     for job in chain.values():
         cfg = load_config(PROJECT_ROOT / job["config"])
         assert job["run_id"] == f"{STAMP}_{cfg['run_name']}"
@@ -95,42 +111,83 @@ def test_dependencies(chain):
     for run_id, jid in trains.items():
         job = chain[jid]
         assert job["deps"] == ([] if job["config"] in SMOKE else smoke_evals), run_id
-    assert len(trains) == 7 and len(evals) == 11
+    # 2 smoke + 6 train (1B, 3B, 8B x age5, age4); evals: those 8 plus the 6 baselines
+    assert len(trains) == 8 and len(evals) == 14
 
 
-AGE4 = "configs/hpg/phase3/qwen1.5b_lora_ep1_age4_hpg.yaml"
+def _without(cfg: dict, *paths: str) -> dict:
+    """A copy of cfg with the dotted keys in paths removed."""
+    out = {k: (dict(v) if isinstance(v, dict) else v) for k, v in cfg.items()}
+    for p in paths:
+        *parents, leaf = p.split(".")
+        d = out
+        for k in parents:
+            d = d.get(k, {})
+        d.pop(leaf, None)
+    return out
 
 
-def test_age4_config_is_run3_recipe_on_age4():
-    age4 = load_config(PROJECT_ROOT / AGE4)
-    run3 = load_config(PROJECT_ROOT / "configs/hpg/phase1/qwen1.5b_lora_ep1_hpg.yaml")
-    local = load_config(PROJECT_ROOT / "configs/phase3/qwen1.5b_lora_ep1_age4.yaml")
-    assert age4["run_name"] == "qwen1.5b_lora_ep1_age4_hpg"
-    assert age4["age_label"] == 4 and age4["data"]["bucket"] == "age4"
-    for key in ("model", "lora", "train", "eval"):
-        assert age4[key] == run3[key] == local[key], key
-    assert {k: v for k, v in age4["data"].items() if k != "bucket"} == {
-        k: v for k, v in run3["data"].items() if k != "bucket"}
+# What a Llama config may change from the Qwen config it copies: the model, the batch split and the bucket.
+VARIES = ("run_name", "hypothesis", "age_label", "model.name", "model.load_in_4bit", "data.bucket",
+          "train.per_device_batch_size", "train.grad_accum", "eval.batch_size", "eval.loss_batch_size")
+TRAIN_RUNS = [(size, kind, age) for size, kind in (("1b", "lora"), ("3b", "lora"), ("8b", "qlora")) for age in (5, 4)]
 
 
-def test_age4_in_chain_after_smoke(chain):
-    jobs = [j for j in chain.values() if j["config"] == AGE4]
-    assert sorted(j["script"].rsplit("/", 1)[1] for j in jobs) == ["evaluate.sbatch", "train.sbatch"]
+@pytest.mark.parametrize("size,kind,age", TRAIN_RUNS, ids=lambda x: str(x))
+def test_llama_train_configs_are_the_run3_recipe(size, kind, age):
+    phase = "phase3" if age == 4 else ("phase2" if kind == "qlora" else "phase1")
+    name = f"llama{size}_{kind}_ep1{'_age4' if age == 4 else ''}_hpg"
+    cfg = load_config(PROJECT_ROOT / f"configs/hpg/{phase}/{name}.yaml")
+    run3 = load_config(PROJECT_ROOT / RUN3)
+    assert cfg["run_name"] == name and cfg["age_label"] == age and cfg["data"]["bucket"] == f"age{age}"
+    assert cfg["model"]["name"] == LLAMA[size]
+    assert cfg["model"]["load_in_4bit"] is (kind == "qlora")
+    assert cfg["train"]["per_device_batch_size"] * cfg["train"]["grad_accum"] == 16
+    assert _without(cfg, *VARIES) == _without(run3, *VARIES)
+
+
+@pytest.mark.parametrize("size", LLAMA)
+@pytest.mark.parametrize("variant", ["default", "strong"])
+def test_llama_baselines(size, variant):
+    cfg = load_config(PROJECT_ROOT / f"configs/hpg/phase0/llama{size}_base-{variant}_hpg.yaml")
+    qwen = load_config(PROJECT_ROOT / f"configs/hpg/phase0/qwen1.5b_base-{variant}_hpg.yaml")
+    assert cfg["model"]["name"] == LLAMA[size] and cfg["model"]["adapter"] is None
+    assert cfg["model"]["load_in_4bit"] is (size == "8b")  # the 8B is evaluated in 4-bit, as it will be served
+    assert cfg["eval"]["prompt_variant"] == variant and "train" not in cfg
+    assert _without(cfg, *VARIES) == _without(qwen, *VARIES)
+
+
+@pytest.mark.parametrize("size,kind,qwen", [("1b", "lora", "configs/hpg/phase1/qwen1.5b_lora_smoke_hpg.yaml"),
+                                            ("8b", "qlora", "configs/hpg/phase2/qwen7b_qlora_smoke_hpg.yaml")])
+def test_llama_smoke_configs(size, kind, qwen):
+    cfg = load_config(PROJECT_ROOT / qwen.replace(qwen.rsplit("/", 1)[1], f"llama{size}_{kind}_smoke_hpg.yaml"))
+    assert cfg["model"]["name"] == LLAMA[size] and cfg["model"]["load_in_4bit"] is (kind == "qlora")
+    assert _without(cfg, *VARIES) == _without(load_config(PROJECT_ROOT / qwen), *VARIES)
+
+
+AGE4 = "configs/hpg/phase3/llama1b_lora_ep1_age4_hpg.yaml"
+
+
+def test_age4_runs_in_chain_after_smoke(chain):
+    for size, kind in (("1b", "lora"), ("3b", "lora"), ("8b", "qlora")):
+        cfg = f"configs/hpg/phase3/llama{size}_{kind}_ep1_age4_hpg.yaml"
+        jobs = [j for j in chain.values() if j["config"] == cfg]
+        assert sorted(j["script"].rsplit("/", 1)[1] for j in jobs) == ["evaluate.sbatch", "train.sbatch"], cfg
 
 
 def test_only_submits_one_run_without_the_smoke_gate():
-    r = run_submit("--dry-run", "--only", "qwen1.5b_lora_ep1_age4_hpg", "--stamp", STAMP)
+    r = run_submit("--dry-run", "--only", "llama1b_lora_ep1_age4_hpg", "--stamp", STAMP)
     assert r.returncode == 0, r.stderr
     jobs = parse_jobs(r.stdout)
     assert len(jobs) == 2 and {j["config"] for j in jobs.values()} == {AGE4}
     train, ev = jobs["JOB_1"], jobs["JOB_2"]
     assert train["script"].endswith("train.sbatch") and train["deps"] == []
     assert ev["script"].endswith("evaluate.sbatch") and ev["deps"] == ["JOB_1"]
-    assert ev["adapter"] == f"experiments/{STAMP}_qwen1.5b_lora_ep1_age4_hpg/adapter"
+    assert ev["adapter"] == f"experiments/{STAMP}_llama1b_lora_ep1_age4_hpg/adapter"
 
 
 def test_only_baseline_is_eval_only():
-    r = run_submit("--dry-run", "--only", "qwen1.5b_base-default_hpg", "--stamp", STAMP)
+    r = run_submit("--dry-run", "--only", "llama8b_base-default_hpg", "--stamp", STAMP)
     assert r.returncode == 0, r.stderr
     jobs = parse_jobs(r.stdout)
     assert len(jobs) == 1 and jobs["JOB_1"]["script"].endswith("evaluate.sbatch") and jobs["JOB_1"]["deps"] == []
@@ -139,8 +196,11 @@ def test_only_baseline_is_eval_only():
 def test_only_rejects_unknown_run_and_smoke_only():
     r = run_submit("--dry-run", "--only", "no_such_run")
     assert r.returncode != 0 and "no_such_run" in r.stderr
-    r = run_submit("--dry-run", "--only", "qwen1.5b_lora_ep1_age4_hpg", "--smoke-only")
+    r = run_submit("--dry-run", "--only", "llama1b_lora_ep1_age4_hpg", "--smoke-only")
     assert r.returncode != 0
+    for retired in ("qwen1.5b_lora_ep1_hpg", "smol360m_lora_r16_lr2e-4_hpg"):  # past runs can't be re-queued
+        r = run_submit("--dry-run", "--only", retired)
+        assert r.returncode != 0 and retired in r.stderr
 
 
 def test_smoke_only():

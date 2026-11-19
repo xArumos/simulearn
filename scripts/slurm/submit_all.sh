@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
-# Queue the full HiPerGator re-run of Phases 0-2 as one chain of SLURM jobs.
+# Queue the HiPerGator run chain (D11 Llama models) as one chain of SLURM jobs.
 #
 #   scripts/slurm/submit_all.sh --dry-run      # print every sbatch command, submit nothing
-#   scripts/slurm/submit_all.sh --smoke-only   # only the two smoke tests (1.5B LoRA, 7B QLoRA)
+#   scripts/slurm/submit_all.sh --smoke-only   # only the two smoke tests (Llama 1B LoRA, Llama 8B QLoRA)
 #   scripts/slurm/submit_all.sh                # smoke tests, then everything else once they pass
-#   scripts/slurm/submit_all.sh --only qwen1.5b_lora_ep1_age4_hpg   # one run on its own (train -> evaluate)
+#   scripts/slurm/submit_all.sh --only llama1b_lora_ep1_age4_hpg   # one run on its own (train -> evaluate)
 #
-# The chain:
-#   1. Smoke:   1.5B LoRA smoke and 7B QLoRA smoke, each trained then evaluated.
+# The chain (models: Llama-3.2-1B and -3B with LoRA in bf16, Llama-3.1-8B with QLoRA in 4-bit; see DECISIONS.md D11):
+#   1. Smoke:   1B LoRA smoke and 8B QLoRA smoke, each trained then evaluated.
 #   2. After both smoke evals succeed (--dependency=afterok), in parallel:
-#        Phase 0  four baselines (evaluation only, no training)
-#        Phase 1  Qwen-1.5B LoRA ep1 (run 3), ep1 ctx10 (run 4), SmolLM2-360M LoRA; each train -> evaluate
-#        Phase 2  Qwen-7B QLoRA ep1; train -> evaluate
-#        Phase 3  Qwen-1.5B LoRA ep1 on the age-4 bucket (run 3 recipe); train -> evaluate
+#        Phase 0  six baselines (evaluation only, no training): 1B, 3B, 8B-in-4-bit x default/strong prompt
+#        Phase 1  Llama-1B LoRA ep1 and Llama-3B LoRA ep1 (the run-3 recipe); each train -> evaluate
+#        Phase 2  Llama-8B QLoRA ep1; train -> evaluate
+#        Phase 3  the same three on the age-4 bucket; each train -> evaluate
+# The Qwen and SmolLM2 configs in configs/hpg/ are the record of past runs and are not in the chain. Qwen must never
+# be run on HiPerGator (POLICIES.md).
 # Every run writes to experiments/<stamp>_<run_name>/ (SLURM logs as slurm-<kind>-<jobid>.out there too).
 #
 # Options:
@@ -39,7 +41,7 @@ while [ $# -gt 0 ]; do
     --only) ONLY="${2:?--only needs a run_name}"; shift ;;
     --stamp) STAMP="${2:?--stamp needs a value}"; shift ;;
     --env-file) ENV_FILE="${2:?--env-file needs a value}"; shift ;;
-    -h|--help) sed -n '2,25p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,26p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 2 ;;
   esac
   shift
@@ -50,23 +52,26 @@ fi
 
 # ---- Job lists (config paths relative to the repo root) ----
 SMOKE_TRAIN=(
-  configs/hpg/phase1/qwen1.5b_lora_smoke_hpg.yaml
-  configs/hpg/phase2/qwen7b_qlora_smoke_hpg.yaml
+  configs/hpg/phase1/llama1b_lora_smoke_hpg.yaml
+  configs/hpg/phase2/llama8b_qlora_smoke_hpg.yaml
 )
 PHASE0_EVAL=(
-  configs/hpg/phase0/qwen1.5b_base-default_hpg.yaml
-  configs/hpg/phase0/qwen1.5b_base-strong_hpg.yaml
-  configs/hpg/phase0/smol360m_base-default_hpg.yaml
-  configs/hpg/phase0/smol360m_base-strong_hpg.yaml
+  configs/hpg/phase0/llama1b_base-default_hpg.yaml
+  configs/hpg/phase0/llama1b_base-strong_hpg.yaml
+  configs/hpg/phase0/llama3b_base-default_hpg.yaml
+  configs/hpg/phase0/llama3b_base-strong_hpg.yaml
+  configs/hpg/phase0/llama8b_base-default_hpg.yaml
+  configs/hpg/phase0/llama8b_base-strong_hpg.yaml
 )
 PHASE12_TRAIN=(
-  configs/hpg/phase1/qwen1.5b_lora_ep1_hpg.yaml
-  configs/hpg/phase1/qwen1.5b_lora_ep1_ctx10_hpg.yaml
-  configs/hpg/phase1/smol360m_lora_r16_lr2e-4_hpg.yaml
-  configs/hpg/phase2/qwen7b_qlora_ep1_hpg.yaml
+  configs/hpg/phase1/llama1b_lora_ep1_hpg.yaml
+  configs/hpg/phase1/llama3b_lora_ep1_hpg.yaml
+  configs/hpg/phase2/llama8b_qlora_ep1_hpg.yaml
 )
 PHASE3_TRAIN=(
-  configs/hpg/phase3/qwen1.5b_lora_ep1_age4_hpg.yaml
+  configs/hpg/phase3/llama1b_lora_ep1_age4_hpg.yaml
+  configs/hpg/phase3/llama3b_lora_ep1_age4_hpg.yaml
+  configs/hpg/phase3/llama8b_qlora_ep1_age4_hpg.yaml
 )
 
 # ---- Settings ----
@@ -164,7 +169,7 @@ if [ -n "$ONLY" ]; then
     if [ "$(run_name "$cfg")" = "$ONLY" ]; then ONLY_CFG="$cfg"; ONLY_KIND=train; fi
   done
   if [ -z "$ONLY_CFG" ]; then
-    echo "error: --only $ONLY matches no run_name in configs/hpg/. Known run_names:" >&2
+    echo "error: --only $ONLY matches no run_name in the chain. Known run_names:" >&2
     for cfg in "${SMOKE_TRAIN[@]}" "${PHASE0_EVAL[@]}" "${PHASE12_TRAIN[@]}" "${PHASE3_TRAIN[@]}"; do
       echo "  $(run_name "$cfg")" >&2
     done
@@ -215,7 +220,7 @@ for cfg in "${PHASE0_EVAL[@]}"; do
   submit eval "$cfg" "${STAMP}_$(run_name "$cfg")" "$GATE"
 done
 
-# ---- Stage 3: Phase 1 LoRA, Phase 2 QLoRA and Phase 3 age-4 LoRA, each train -> evaluate, gated on the smoke tests ----
+# ---- Stage 3: Phase 1 LoRA, Phase 2 QLoRA and Phase 3 age-4 runs, each train -> evaluate, gated on the smoke tests ----
 echo "# stage phase1+phase2+phase3 (after $GATE)"
 for cfg in "${PHASE12_TRAIN[@]}" "${PHASE3_TRAIN[@]}"; do
   submit_train_eval "$cfg" "$GATE"
