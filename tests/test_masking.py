@@ -3,7 +3,15 @@ import pytest
 
 from src.train.collator import IGNORE, PadCollator, encode_example
 
-MODELS = ["Qwen/Qwen2.5-1.5B-Instruct", "HuggingFaceTB/SmolLM2-360M-Instruct"]
+# The D11 models plus SmolLM2. The Llama repos are gated (Meta license): without accepted access the tests skip.
+# No model from a country of concern is ever loaded here, not even its tokenizer (POLICIES.md).
+MODELS = [
+    "meta-llama/Llama-3.2-1B-Instruct",
+    "meta-llama/Llama-3.2-3B-Instruct",
+    "meta-llama/Llama-3.1-8B-Instruct",
+    "HuggingFaceTB/SmolLM2-360M-Instruct",
+]
+END_OF_TURN = ("<|eot_id|>", "<|im_end|>")  # Llama 3.x, SmolLM2
 
 MSGS = [
     {"role": "system", "content": "You are a 5-year-old child talking with a caregiver. Reply the way a real child of that age would."},
@@ -15,11 +23,13 @@ MSGS = [
 
 
 def _tok(name):
-    transformers = pytest.importorskip("transformers")
+    pytest.importorskip("transformers")
+    from src.utils.modeling import load_tokenizer  # the same loader training uses (sets pad = eos if missing)
+
     try:
-        return transformers.AutoTokenizer.from_pretrained(name)
-    except Exception as e:  # offline and not cached
-        pytest.skip(f"tokenizer {name} unavailable: {e}")
+        return load_tokenizer(name)
+    except Exception as e:  # offline and not cached, or a gated repo whose license is not accepted
+        pytest.skip(f"tokenizer {name} unavailable: {type(e).__name__}")
 
 
 @pytest.mark.parametrize("model", MODELS)
@@ -29,7 +39,8 @@ def test_only_child_reply_is_learned(model):
     learned = [t for t, l in zip(enc["input_ids"], enc["labels"]) if l != IGNORE]
     assert tok.decode(learned, skip_special_tokens=True) == MSGS[-1]["content"]
     # The end-of-turn token is learned too, so the model learns when to stop.
-    assert learned[-1] in {tok.eos_token_id, tok.convert_tokens_to_ids("<|im_end|>")}
+    eot = {tok.convert_tokens_to_ids(t) for t in END_OF_TURN} - {tok.unk_token_id, None}
+    assert learned[-1] in eot and tok.convert_ids_to_tokens(learned[-1]) in END_OF_TURN
     # Labels are a contiguous block at the end; the earlier child turn ("a tower.") is not learned.
     first = next(i for i, l in enumerate(enc["labels"]) if l != IGNORE)
     assert all(l != IGNORE for l in enc["labels"][first:])
@@ -45,6 +56,19 @@ def test_truncation_keeps_target(model):
     learned = [t for t, l in zip(enc["input_ids"], enc["labels"]) if l != IGNORE]
     assert tok.decode(learned, skip_special_tokens=True) == MSGS[-1]["content"]
     assert enc["n_context_turns_used"] < 10
+
+
+@pytest.mark.parametrize("model", MODELS)
+def test_padding_never_leaks_into_labels(model):
+    """pad may equal eos (Llama: both <|eot_id|>); the learned end-of-turn stays, padded positions are ignored."""
+    tok = _tok(model)
+    long_enc = encode_example(tok, MSGS, max_length=512)
+    short_enc = encode_example(tok, MSGS[:2] + [{"role": "assistant", "content": "no."}], max_length=512)
+    batch = PadCollator(tok.pad_token_id)([long_enc, short_enc])
+    n = len(short_enc["input_ids"])
+    assert (batch["labels"][1, n:] == IGNORE).all()
+    assert batch["labels"][1, n - 1].item() == short_enc["input_ids"][-1]
+    assert tok.convert_ids_to_tokens(short_enc["input_ids"][-1]) in END_OF_TURN
 
 
 def test_pad_collator():
