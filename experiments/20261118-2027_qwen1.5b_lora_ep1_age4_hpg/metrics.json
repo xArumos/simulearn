@@ -1,0 +1,98 @@
+{
+ "n": 1000,
+ "generated": {
+  "mean_words": 3.577,
+  "median_words": 2.0,
+  "p90_words": 7.0,
+  "msttr_100": 0.6417142857142858,
+  "distinct_1": 0.1836734693877551,
+  "distinct_2": 0.5937136204889406,
+  "empty_rate": 0.0,
+  "loop_rate": 0.002,
+  "meta_rate": 0.0,
+  "continues_other_side_rate": 0.0,
+  "multiline_rate": 0.0,
+  "filler_rate": 0.11,
+  "short_answer_rate": 0.252,
+  "repetition_rate": 0.04,
+  "nonstandard_rate": 0.047,
+  "silence_rate": 0.061,
+  "silence_malformed_rate": 0.0,
+  "over_20_words_rate": 0.01,
+  "degenerate_rate": 0.002,
+  "silence_tokens_by_seconds": {
+   "2": 26,
+   "3": 30,
+   "5": 4,
+   "6": 1,
+   "10": 1
+  },
+  "oov_rate": 0.004752585965893207,
+  "rare_word_rate": 0.047525859658932065
+ },
+ "reference": {
+  "mean_words": 4.159,
+  "median_words": 3.0,
+  "p90_words": 9.0,
+  "msttr_100": 0.642439024390244,
+  "distinct_1": 0.21423419091127674,
+  "distinct_2": 0.7119341563786008,
+  "empty_rate": 0.0,
+  "loop_rate": 0.01,
+  "meta_rate": 0.001,
+  "continues_other_side_rate": 0.0,
+  "multiline_rate": 0.0,
+  "filler_rate": 0.155,
+  "short_answer_rate": 0.176,
+  "repetition_rate": 0.078,
+  "nonstandard_rate": 0.042,
+  "silence_rate": 0.06,
+  "silence_malformed_rate": 0.0,
+  "over_20_words_rate": 0.007,
+  "degenerate_rate": 0.011,
+  "silence_tokens_by_seconds": {
+   "2": 17,
+   "3": 24,
+   "4": 9,
+   "5": 5,
+   "6": 3,
+   "7": 3,
+   "8": 3,
+   "10": 7
+  },
+  "oov_rate": 0.025727338302476557,
+  "rare_word_rate": 0.09184900216398173
+ },
+ "length_ks": 0.07700000000000001,
+ "length_wasserstein": 0.6340000000000001,
+ "child_marker_gap": 0.028,
+ "degeneration_rate": 0.002,
+ "target_loss": {
+  "loss": 2.154301862024254,
+  "perplexity": 8.621868823297344,
+  "n_examples": 999,
+  "n_tokens": 7768
+ },
+ "run": {
+  "run_id": "20261118-2027_qwen1.5b_lora_ep1_age4_hpg",
+  "model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "adapter": "experiments/20261118-2027_qwen1.5b_lora_ep1_age4_hpg/adapter",
+  "split": "val",
+  "bucket": "age4",
+  "prompt_variant": "default",
+  "generation_seconds": 14.3,
+  "peak_vram_gib": 5.6,
+  "reproducible": {
+   "n": 32,
+   "identical": true
+  },
+  "decoding": {
+   "temperature": 0.7,
+   "top_p": 0.9,
+   "max_new_tokens": 60,
+   "seed": 1234,
+   "batch_size": 64,
+   "max_length": 512
+  }
+ }
+}

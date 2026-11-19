@@ -1,0 +1,101 @@
+{
+ "n": 1000,
+ "generated": {
+  "mean_words": 10.248,
+  "median_words": 7.0,
+  "p90_words": 25.0,
+  "msttr_100": 0.5658823529411766,
+  "distinct_1": 0.11953551912568305,
+  "distinct_2": 0.5041089965397924,
+  "empty_rate": 0.0,
+  "loop_rate": 0.062,
+  "meta_rate": 0.007,
+  "continues_other_side_rate": 0.0,
+  "multiline_rate": 0.002,
+  "filler_rate": 0.195,
+  "short_answer_rate": 0.078,
+  "repetition_rate": 0.114,
+  "nonstandard_rate": 0.046,
+  "silence_rate": 0.053,
+  "silence_malformed_rate": 0.001,
+  "over_20_words_rate": 0.129,
+  "degenerate_rate": 0.069,
+  "silence_tokens_by_seconds": {
+   "2": 27,
+   "3": 21,
+   "4": 8,
+   "5": 4,
+   "6": 1,
+   "10": 7,
+   "30": 1
+  },
+  "oov_rate": 0.02156518345042935,
+  "rare_word_rate": 0.08128415300546447
+ },
+ "reference": {
+  "mean_words": 5.099,
+  "median_words": 3.0,
+  "p90_words": 11.0,
+  "msttr_100": 0.6514,
+  "distinct_1": 0.20043145714846047,
+  "distinct_2": 0.72554281532081,
+  "empty_rate": 0.0,
+  "loop_rate": 0.007,
+  "meta_rate": 0.001,
+  "continues_other_side_rate": 0.0,
+  "multiline_rate": 0.0,
+  "filler_rate": 0.139,
+  "short_answer_rate": 0.156,
+  "repetition_rate": 0.07,
+  "nonstandard_rate": 0.051,
+  "silence_rate": 0.057,
+  "silence_malformed_rate": 0.0,
+  "over_20_words_rate": 0.024,
+  "degenerate_rate": 0.008,
+  "silence_tokens_by_seconds": {
+   "2": 18,
+   "3": 16,
+   "4": 12,
+   "5": 6,
+   "6": 1,
+   "7": 5,
+   "8": 2,
+   "9": 1,
+   "10": 4
+  },
+  "oov_rate": 0.015885467738772308,
+  "rare_word_rate": 0.0902137674053736
+ },
+ "length_ks": 0.289,
+ "length_wasserstein": 5.367,
+ "child_marker_gap": 0.04866666666666667,
+ "degeneration_rate": 0.069,
+ "target_loss": {
+  "loss": 3.12423078844949,
+  "perplexity": 22.742394650966567,
+  "n_examples": 999,
+  "n_tokens": 9092
+ },
+ "run": {
+  "run_id": "20261118-2027_smol360m_base-default_hpg",
+  "model": "HuggingFaceTB/SmolLM2-360M-Instruct",
+  "adapter": null,
+  "split": "val",
+  "bucket": "age5",
+  "prompt_variant": "default",
+  "generation_seconds": 10.6,
+  "peak_vram_gib": 1.8,
+  "reproducible": {
+   "n": 32,
+   "identical": true
+  },
+  "decoding": {
+   "temperature": 0.7,
+   "top_p": 0.9,
+   "max_new_tokens": 60,
+   "seed": 1234,
+   "batch_size": 64,
+   "max_length": 512
+  }
+ }
+}

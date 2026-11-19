@@ -1,0 +1,23 @@
+{
+ "train_skipped_too_long": 42,
+ "train_examples": 30314,
+ "train_tokens": 4274567,
+ "train_target_tokens": 278169,
+ "val_examples": 1000,
+ "val_tokens": 137867,
+ "val_target_tokens": 8899,
+ "trainable_params": 18464768,
+ "total_params": 1562179072,
+ "train_seconds": 603,
+ "train_result": {
+  "train_runtime": 602.9318,
+  "train_samples_per_second": 50.278,
+  "train_steps_per_second": 3.143,
+  "total_flos": 5.440389655197696e+16,
+  "train_loss": 2.4012614876739584,
+  "epoch": 1.0
+ },
+ "best_checkpoint": "experiments/20261118-2027_qwen1.5b_lora_ep1_hpg/checkpoints/checkpoint-1895",
+ "best_eval_loss": 2.2049479484558105,
+ "peak_vram_gib": 10.52
+}
