@@ -113,7 +113,9 @@ def test_waits_for_the_demo_when_asked(tmp_path):
 
 
 def test_missing_cloudflared_points_at_the_readme(tmp_path, listener):
-    out = run_tunnel(tmp_path, stub=False, DEMO_PASSWORD="x", DEMO_PORT=str(listener))
+    if any(Path(d, "cloudflared").exists() for d in ("/usr/bin", "/bin")):
+        pytest.skip("cloudflared is installed system-wide here; the test would open a real tunnel")
+    out =run_tunnel(tmp_path, stub=False, DEMO_PASSWORD="x", DEMO_PORT=str(listener))
     assert out.returncode != 0
     assert "cloudflared" in out.stderr and "README" in out.stderr
 

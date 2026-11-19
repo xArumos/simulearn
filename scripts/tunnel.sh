@@ -36,28 +36,13 @@ command -v cloudflared >/dev/null 2>&1 \
   || die "cloudflared is not on PATH. Install it as described in README.md (\"Share the demo with a Cloudflare Tunnel\")."
 
 # DEMO_PASSWORD: a shell variable wins over .env, even when empty (same rule as backend/app/env.py).
-demo_password_set() {
-  if [ "${DEMO_PASSWORD+set}" = set ]; then
-    [ -n "$DEMO_PASSWORD" ]
-    return
-  fi
-  [ -f "$ENV_FILE" ] || return 1
-  local line value
-  line="$(grep -E '^[[:space:]]*(export[[:space:]]+)?DEMO_PASSWORD[[:space:]]*=' "$ENV_FILE" | tail -n 1)" || return 1
-  value="${line#*=}"
-  value="$(printf '%s' "$value" | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//')"
-  if [ "${#value}" -ge 2 ] && { [ "${value:0:1}" = '"' ] || [ "${value:0:1}" = "'" ]; } \
-     && [ "${value:0:1}" = "${value: -1}" ]; then
-    value="${value:1:${#value}-2}"
-  fi
-  [ -n "$value" ]
-}
-demo_password_set \
+# shellcheck source=scripts/_demo_env.sh
+. "$ROOT/scripts/_demo_env.sh"
+demo_password_set "$ENV_FILE" \
   || die "DEMO_PASSWORD is empty. Set it in .env (and restart the demo) before putting the demo on the internet."
 
-listening() { (exec 3<>"/dev/tcp/127.0.0.1/${PORT}") 2>/dev/null; }
 waited=0
-until listening; do
+until demo_listening "$PORT"; do
   if [ "$waited" -ge "$WAIT" ]; then
     if [ "$WAIT" -gt 0 ]; then
       die "nothing is listening on ${LOCAL_URL} after waiting ${WAIT} s. Is the demo running? (systemctl --user status simulearn-demo)"
