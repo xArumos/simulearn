@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { BookOpen, Info, MessagesSquare, RotateCcw } from "lucide-react";
 import { useId, useRef, useState } from "react";
+import { useLocation } from "react-router";
 import { api, queryKeys, type AppConfig, type SessionCreated, type TurnReply } from "@/api";
 import { useMe } from "@/auth";
 import { ChatLog } from "@/components/chat/ChatLog";
@@ -19,9 +20,19 @@ import { useToast } from "@/components/ui/toast";
 import { Tooltip } from "@/components/ui/tooltip";
 import { ageLabel, thinkingDelayMs, wait } from "@/lib/reply";
 
+/**
+ * Router state for opening Practice with a set age and scene, e.g. from "Practice again with this
+ * scenario" on a reopened session (src/pages/SessionView.tsx).
+ */
+export interface PracticeStart {
+  age?: number;
+  scenarioId?: string | null;
+}
+
 /** The practice screen (route `/`): talk with the AI child, optionally beside the untrained model. */
 export function PracticePage() {
   const me = useMe().data;
+  const start = (useLocation().state ?? null) as PracticeStart | null;
   const first = me?.display_name?.split(/\s+/)[0];
   const config = useQuery({ queryKey: queryKeys.config, queryFn: api.config });
 
@@ -46,24 +57,27 @@ export function PracticePage() {
             The server has no trained model for any age yet.
           </EmptyState>
         ) : (
-          <PracticeChat config={config.data} />
+          <PracticeChat config={config.data} start={start} />
         ))}
     </>
   );
 }
 
-function PracticeChat({ config }: { config: AppConfig }) {
+function PracticeChat({ config, start }: { config: AppConfig; start: PracticeStart | null }) {
   const toast = useToast();
   const ageId = useId();
   const compareId = useId();
 
-  const [age, setAge] = useState<number>(config.default_age ?? config.ages[0]);
+  // A start age or scene the server no longer offers falls back to the defaults.
+  const startAge = start?.age !== undefined && config.ages.includes(start.age) ? start.age : null;
+  const startScenario = config.scenarios.find((s) => s.id === start?.scenarioId) ?? null;
+  const [age, setAge] = useState<number>(startAge ?? config.default_age ?? config.ages[0]);
   const [compare, setCompareState] = useState(config.compare_default);
-  const [scenarioId, setScenarioId] = useState<string | null>(null);
+  const [scenarioId, setScenarioId] = useState<string | null>(startScenario?.id ?? null);
   const [session, setSession] = useState<SessionCreated | null>(null);
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [compareStarts, setCompareStarts] = useState<number[]>([]);
-  const [draft, setDraft] = useState("");
+  const [draft, setDraft] = useState(startScenario?.opening_line ?? "");
   const [busy, setBusy] = useState(false);
   const [lastSecs, setLastSecs] = useState<{ child?: number; untrained?: number }>({});
   const [pickerOpen, setPickerOpen] = useState(false);

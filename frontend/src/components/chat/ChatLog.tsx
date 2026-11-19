@@ -1,4 +1,6 @@
+import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { useEffect, useRef } from "react";
+import type { Rating } from "@/api";
 import { cn } from "@/lib/utils";
 import { FeedbackButtons } from "./FeedbackButtons";
 import { ReplyText, WaitingIndicator } from "./ReplyText";
@@ -12,15 +14,33 @@ interface Props {
   compareStarts: number[];
   sessionId: string | null;
   saving: boolean;
+  /** A reopened conversation: no feedback buttons (saved ratings are shown instead), no auto-scroll. */
+  readOnly?: boolean;
 }
 
-function ReplyCard({ side, state, turn, sessionId, saving, labelled }: {
+/** A saved rating in a reopened conversation: thumbs up/down and the note, if any. */
+function SavedRating({ rating }: { rating: Rating }) {
+  const Icon = rating.liked ? ThumbsUp : ThumbsDown;
+  return (
+    <p className="mt-2 flex items-start gap-1.5 text-xs text-muted-foreground">
+      <Icon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+      <span>
+        {rating.liked ? "You rated this a good reply" : "You rated this not a good reply"}
+        {rating.note && <span className="text-foreground">: {rating.note}</span>}
+      </span>
+    </p>
+  );
+}
+
+function ReplyCard({ side, state, turn, sessionId, saving, labelled, readOnly, rating }: {
   side: Side;
   state: ReplyState;
   turn: number;
   sessionId: string | null;
   saving: boolean;
   labelled: boolean;
+  readOnly: boolean;
+  rating: Rating | null | undefined;
 }) {
   return (
     <section
@@ -46,7 +66,9 @@ function ReplyCard({ side, state, turn, sessionId, saving, labelled }: {
       {state.status === "done" && (
         <>
           <ReplyText text={state.reply.text} />
-          {sessionId && <FeedbackButtons sessionId={sessionId} turn={turn} side={side} saving={saving} />}
+          {readOnly
+            ? rating && <SavedRating rating={rating} />
+            : sessionId && <FeedbackButtons sessionId={sessionId} turn={turn} side={side} saving={saving} />}
         </>
       )}
     </section>
@@ -64,19 +86,19 @@ function CompareDivider() {
 }
 
 /** The conversation: each educator line with the child's reply (and the untrained model's beside it). */
-export function ChatLog({ turns, compare, compareStarts, sessionId, saving }: Props) {
+export function ChatLog({ turns, compare, compareStarts, sessionId, saving, readOnly = false }: Props) {
   const end = useRef<HTMLDivElement>(null);
   const last = turns[turns.length - 1];
   const lastState = last ? `${turns.length}:${last.child.status}:${last.untrained?.status ?? ""}` : "";
   useEffect(() => {
-    end.current?.scrollIntoView?.({ block: "end", behavior: "smooth" });
-  }, [lastState]);
+    if (!readOnly) end.current?.scrollIntoView?.({ block: "end", behavior: "smooth" });
+  }, [lastState, readOnly]);
 
   const lastTurnNo = turns.reduce((n, t) => Math.max(n, t.turn), 0);
   const trailingDivider = compare && compareStarts.some((n) => n > lastTurnNo);
 
   return (
-    <div role="log" aria-label="Conversation" aria-live="polite" className="grid gap-5">
+    <div role="log" aria-label="Conversation" aria-live={readOnly ? "off" : "polite"} className="grid gap-5">
       {turns.map((t) => (
         <div key={t.key} className="grid gap-3">
           {compare && t.turn > 1 && compareStarts.includes(t.turn) && <CompareDivider />}
@@ -87,10 +109,28 @@ export function ChatLog({ turns, compare, compareStarts, sessionId, saving }: Pr
             </div>
           </div>
           <div className={cn("grid gap-3", compare && "md:grid-cols-2")}>
-            <ReplyCard side="child" state={t.child} turn={t.turn} sessionId={sessionId} saving={saving} labelled={compare} />
+            <ReplyCard
+              side="child"
+              state={t.child}
+              turn={t.turn}
+              sessionId={sessionId}
+              saving={saving}
+              labelled={compare}
+              readOnly={readOnly}
+              rating={t.ratings?.child}
+            />
             {compare &&
               (t.untrained ? (
-                <ReplyCard side="untrained" state={t.untrained} turn={t.turn} sessionId={sessionId} saving={saving} labelled />
+                <ReplyCard
+                  side="untrained"
+                  state={t.untrained}
+                  turn={t.turn}
+                  sessionId={sessionId}
+                  saving={saving}
+                  labelled
+                  readOnly={readOnly}
+                  rating={t.ratings?.untrained}
+                />
               ) : (
                 <p className="hidden self-center text-center text-xs text-muted-foreground md:block">Not compared</p>
               ))}
