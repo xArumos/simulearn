@@ -25,6 +25,8 @@ Context: this model will be the "child" in SimuLearn, a platform where early chi
 - **Never ask for, store, or echo passwords/tokens.** If a step needs the user to log in, tell them to do it themselves (see §5).
 - **No pushing to GitHub, no creating remote repos, no spending money (paid APIs, cloud GPUs)** without explicit user approval.
 - Work inside the project directory and its virtual environment. Do not modify system-wide Python, drivers, or OS settings.
+- **No LLMs from foreign countries of concern (Florida law, UF policy).** Never download, train, fine-tune, evaluate or serve a model developed, operated or hosted by an organization in or controlled by China, Russia, Iran, North Korea, Cuba, Venezuela (Maduro regime) or Syria, on HiPerGator or any UF resource, or with university data. **This includes Qwen** (Alibaba) and DeepSeek, GLM, Kimi, Yi, InternLM, etc. Fine-tunes and LoRA adapters of such models are prohibited too. Before using any new model, check its developer and record it in `DECISIONS.md`. Full rules, sources and penalties: `POLICIES.md`.
+- **No idle GPUs on HiPerGator.** Do not hold an allocated GPU without work on it, and never run fake workloads to dodge idle detection (`POLICIES.md` §2).
 
 ## 3. Autonomy rules
 
@@ -128,6 +130,8 @@ Convert CHAT notation to plain text. At minimum:
 - Make preprocessing deterministic and re-runnable with one command.
 
 ## 8. Training plan
+
+> **2026-11-19: Qwen is prohibited** (§2, `POLICIES.md`). The Qwen models named below are kept as the historical record of Phases 0-3. Do not run them again. The replacement base models are proposed in `DECISIONS.md` D11 and wait for approval from Justin and Dr. Dever (RED). Until then, do not start new training runs on any Qwen model.
 
 ### Phase 0 — Baselines (no training)
 - Models: `Qwen/Qwen2.5-1.5B-Instruct` and `HuggingFaceTB/SmolLM2-360M-Instruct`.

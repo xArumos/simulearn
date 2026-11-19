@@ -145,6 +145,8 @@ Use this when the desktop demo is off. It runs the same demo on a free ZeroGPU S
 <!-- BEGIN HiPerGator section (issue #9) -->
 ## Training on HiPerGator
 
+> **Before running anything on HiPerGator, read `POLICIES.md`.** UF prohibits LLMs from countries of concern on HiPerGator, **Qwen included**, and that covers fine-tunes and LoRA adapters too. Do not submit the Qwen configs in `configs/hpg/` again. UF also prohibits leaving an allocated GPU idle.
+
 HiPerGator is UF's computing cluster. You don't run jobs on it directly: you log in to a *login node*, then hand jobs to **SLURM**, the queue system, which runs them on a GPU node when one is free. These scripts queue the whole re-run of Phases 0–2, plus the Phase 3 age-4 adapter, with one command. The Python code is the same as on the local PC; only `scripts/env_hpg.sh` and `scripts/slurm/` are HiPerGator-specific.
 
 | File | What it does |

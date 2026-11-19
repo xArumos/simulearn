@@ -6,6 +6,12 @@ All work is tracked as **GitHub Issues**: small tasks, each fitting one pull req
 
 This repo is **public**. Issues, PRs, comments and commits never contain CHILDES transcript text, model replies that quote it, data files, adapters, tokens or passwords. Describe data with counts and metrics instead. (CHILDES is CC BY-NC-SA; our IRB covers analysis only. See `CLAUDE.md` §2.)
 
+## University rules (HiPerGator)
+
+`POLICIES.md` lists the outside rules this project must follow. In short:
+- **No LLMs from countries of concern** (China, Russia, Iran, North Korea, Cuba, Venezuela, Syria) on HiPerGator or any UF resource. This includes **Qwen** and every fine-tune or LoRA adapter of such a model. Check a model's developer before adding it to any config. Breaking this rule gets the HiPerGator account suspended, and a second offense gets it banned.
+- **No idle GPUs on HiPerGator.** Use batch jobs, and end interactive GPU sessions when you are not using them.
+
 ## Issue lifecycle
 
 ```

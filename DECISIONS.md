@@ -4,6 +4,36 @@ YELLOW and RED decisions, with what / why / evidence. Newest first.
 
 ---
 
+## 2026-11-19 — D11 (RED, proposed; waiting on Justin and Dr. Dever): Replace Qwen; base models from outside countries of concern
+**Why:** UF prohibits LLMs developed by organizations in or controlled by a foreign country of concern on any UF computing resource, fine-tunes and LoRA adapters included, with no exceptions (`POLICIES.md` §1). Qwen is developed by Alibaba Cloud (China). Justin found the rule on 2026-11-19, after the HiPerGator chain `20261118-2027` had run.
+
+**What was affected (facts, for the conversation with Dr. Dever and UF Research Computing):**
+- HiPerGator, chain `20261118-2027` (2026-11-18): 8 of 11 runs used Qwen. These were the Qwen-1.5B baselines, LoRA runs and age-4 run, and the Qwen-7B smoke and QLoRA runs. The Qwen weights are in the Hugging Face cache on the group's blue storage, next to the trained adapters. The 3 SmolLM2 runs are not affected. Nothing is running or queued.
+- Outside UF resources: earlier local runs on Justin's own PC (Phases 0-3), the desktop demo (D10) and the Hugging Face Space (D9) all use Qwen. Whether the rule reaches these (it also covers "processing of any university data") is for Dr. Dever / UFIT to say. The safe course is to switch them too.
+- The summit paper names Qwen.
+- **Not decided here (needs a human):** whether to delete the Qwen files on HiPerGator, and whether to report the use to UF Research Computing proactively. Recommended: tell Dr. Dever now and open a ticket at https://support.rc.ufl.edu asking what to do with the existing files. Do not delete anything before that answer.
+
+**Proposed replacements.** The criteria: a developer outside the countries of concern, preferably a model family that UF Research Computing itself provides on HiPerGator (its AI models page lists Llama, Gemma and Mistral); a real system role in the chat template (our prompt is a system message); and a size that works for the demo (below).
+
+| Role | Was | Proposed | Developer | Notes |
+|---|---|---|---|---|
+| Main model (Phase 1 recipe) | Qwen2.5-1.5B-Instruct | **`meta-llama/Llama-3.2-1B-Instruct`** and **`meta-llama/Llama-3.2-3B-Instruct`** | Meta (US) | Run both: 1B is the closest size to the old model, 3B is the likely winner. Gated: Justin accepts the Llama 3.2 license on Hugging Face and logs in himself. Shared adapters must say "Built with Llama". |
+| Larger model (Phase 2) | Qwen2.5-7B-Instruct, QLoRA | **`meta-llama/Llama-3.1-8B-Instruct`**, QLoRA | Meta (US) | Same license steps (Llama 3.1). Can be served on the desktop in 4-bit (below). |
+| Small comparison | SmolLM2-360M-Instruct | **dropped, not re-run** | Hugging Face (US/France) | Allowed, and its existing Phase 0/1 HiPerGator runs stay valid. Its job (testing whether a much smaller model is enough) is done: it was not. Llama-3.2-1B is now the small end of the comparison. |
+| Backups if Llama does not work out | | `google/gemma-3-1b-it` / `gemma-3-4b-it` / `gemma-3-12b-it` (Google, US); `microsoft/Phi-4-mini-instruct` (3.8B, Microsoft, US, MIT, not gated); `mistralai/Mistral-7B-Instruct-v0.3` (Mistral AI, France, Apache 2.0) | | Gemma's template has no separate system role (it is folded into the first user turn), so Llama is the better first choice. |
+
+**Can we go bigger now that we train on HiPerGator?** Training is no longer the limit: the RTX PRO 6000 (96 GB) can do LoRA on an 8B model in bf16, and QLoRA well beyond that. The limit is **serving the demo on the RTX 4070 Ti (12 GB)**. Running a model needs far less memory than training it (no gradients, no optimizer state, short replies), but the weights still have to fit. The demo loads one base model and switches age adapters on and off (`src/demo/chat_demo.py`), so VRAM is roughly the size of one model plus about 1 GB:
+- bf16 (2 bytes per parameter): 1B ~2.5 GB, 3B ~6.5 GB → fit. 8B ~16 GB → does not fit in bf16 (it does in 4-bit, next line).
+- 4-bit (~0.6 bytes per parameter): 8B ~5.5-6 GB → fits. 12-14B ~8-9 GB → tight but possible. 27B and up, including 70B → do not fit; they would need a server GPU (not HiPerGator for an always-on demo, see `POLICIES.md` §2).
+- 8-bit (~1 byte per parameter): 8B ~8.5-9 GB → fits only just, and bitsandbytes 8-bit inference is slow. Not recommended.
+- Rough estimates; to be measured.
+- **Precision plan:** 1B and 3B: plain LoRA in bf16, served in bf16. 8B: **train with QLoRA (4-bit NF4 base), serve in the same 4-bit** (~6 GB). The adapter then runs under the conditions it was trained in, and the eval (which already loads QLoRA runs in 4-bit) measures exactly what the demo serves. Serving in 4-bit needs a small change to `chat_demo.py` (it loads bf16 today).
+- **Bigger is not automatically more child-like.** In Phase 2 the 7B QLoRA had the best loss but replies that were too short (`reports/phase2/phase2_report.md`). So the plan is to train 1B, 3B and 8B with the same recipe and let the metrics and the blind ratings choose. Practical ceiling for the demo: about 8B.
+
+**Plan once approved (to become issues):** new `configs/hpg/` for Llama 1B/3B/8B (run-3 recipe) and a masking test for the Llama tokenizer; re-run Phase 0-3 on HiPerGator with them; 4-bit loading option in the demo, then switch the demo and the Space; retire the Qwen configs and adapters; update CLAUDE.md §5/§8 and the paper. The pipeline keeps the model in the config, so preprocessing, splits and evaluation do not change.
+
+---
+
 ## 2026-11-18 — D10 (YELLOW): Self-host the demo and its database on the desktop
 **What:** The always-on demo now runs on Justin's desktop (RTX 4070 Ti, WSL2) as a systemd user service (`scripts/serve_demo.sh`, `scripts/systemd/simulearn-demo.service`), and saves chats to the local MongoDB from issue #13 (`docker-compose.yml`) instead of MongoDB Atlas. This replaces the Hugging Face Space as the main way for the team to try the model.
 - It binds `127.0.0.1:7860` only; a tunnel exposes it to testers, the LAN cannot reach it.
