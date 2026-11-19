@@ -94,3 +94,7 @@ dnspython==2.9.2
 mongomock==4.3.0  # tests only
 sentinels==1.1.1
 fastapi==0.143.2  # backend/ models (also pulled in by gradio)
+argon2-cffi==25.1.0  # product login password hashing (src/product/auth.py)
+argon2-cffi-bindings==26.2.0
+cffi==2.1.1
+pycparser==3.12
