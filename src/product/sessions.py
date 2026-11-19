@@ -15,7 +15,12 @@ Two stores with the same interface:
   turn number; every iteration also records its turn in metadata.turn.
 - `MemorySessions` (saving off, no MongoDB): the same data in a dict, for the life of the process.
 
-A turn record is {"turn", "adult", "text", "secs", "seed"}.
+A turn record is {"turn", "adult", "text", "secs", "seed"}; read back it also has "version" (its place in
+that side's conversation: iteration version in MongoDB, 1, 2, ... in memory) and "model".
+
+Ratings (POST /api/feedback): `MongoSessions` writes them with `DemoStore.rate` to the `feedback` collection
+(conversation_id = that side's conversation ObjectId, version = the rated iteration, plus session_id and turn);
+`MemorySessions` keeps them in memory and reports them as not saved. Later ratings of the same reply win.
 """
 from __future__ import annotations
 
@@ -25,7 +30,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from src.demo.store import EMPTY_REPLY
+from src.demo.store import EMPTY_REPLY, DemoStore
 
 SIDES = ("child", "untrained")
 SESSIONS_COLLECTION = "practice_sessions"
@@ -33,6 +38,11 @@ SESSIONS_COLLECTION = "practice_sessions"
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def latest_ratings(rows: list[dict]) -> dict[tuple[str, int], dict]:
+    """{(side, turn): {"liked", "note"}} from rating rows in the order they were made (the last one wins)."""
+    return {(r["side"], r["turn"]): {"liked": bool(r["liked"]), "note": r.get("note") or ""} for r in rows}
 
 
 def new_session(owner_id: str, age: int, scenario_id: Optional[str], compare: bool) -> dict:
@@ -57,6 +67,7 @@ class MemorySessions:
     def __init__(self):
         self._sessions: dict[str, dict] = {}
         self._turns: dict[str, dict[str, list[dict]]] = {}
+        self._ratings: dict[str, list[dict]] = {}
         self._lock = threading.Lock()
 
     def create(self, owner_id: str, age: int, scenario_id: Optional[str], compare: bool) -> dict:
@@ -64,6 +75,7 @@ class MemorySessions:
         with self._lock:
             self._sessions[s["_id"]] = s
             self._turns[s["_id"]] = {side: [] for side in SIDES}
+            self._ratings[s["_id"]] = []
         return copy.deepcopy(s)
 
     def get(self, session_id: str, owner_id: str) -> Optional[dict]:
@@ -80,7 +92,26 @@ class MemorySessions:
 
     def append(self, session: dict, side: str, turn: dict, model: str, metadata: dict) -> None:
         with self._lock:
-            self._turns[session["_id"]][side].append(dict(turn))
+            done = self._turns[session["_id"]][side]
+            done.append({**turn, "version": len(done) + 1, "model": model})
+
+    def recent(self, owner_id: str, limit: int) -> list[dict]:
+        """The owner's sessions of this process, newest first, each with "turns" = number of child turns."""
+        with self._lock:
+            mine = [s for s in self._sessions.values() if s["owner_id"] == owner_id][::-1]  # newest created last
+            mine.sort(key=lambda s: s["created_at"], reverse=True)  # stable: same timestamp keeps newest first
+            return [{**copy.deepcopy(s), "turns": len(self._turns[s["_id"]]["child"])} for s in mine[:limit]]
+
+    def rate(self, session: dict, side: str, turn: dict, liked: bool, note: str) -> bool:
+        """Kept for this process only, so the answer is False: not saved."""
+        with self._lock:
+            self._ratings[session["_id"]].append({"side": side, "turn": turn["turn"], "liked": liked,
+                                                  "note": note.strip()})
+        return False
+
+    def ratings(self, session: dict) -> dict[tuple[str, int], dict]:
+        with self._lock:
+            return latest_ratings(copy.deepcopy(self._ratings[session["_id"]]))
 
 
 class MongoSessions:
@@ -94,6 +125,9 @@ class MongoSessions:
         self.transcripts = MongoTranscriptStore(database)
         self.sessions = database[SESSIONS_COLLECTION]
         self.sessions.create_index([("owner_id", 1), ("created_at", -1)])
+        self.feedback_store = DemoStore(database)
+        self.feedback = self.feedback_store.feedback
+        self.feedback.create_index([("session_id", 1), ("created_at", 1)])
 
     def create(self, owner_id: str, age: int, scenario_id: Optional[str], compare: bool) -> dict:
         s = new_session(owner_id, age, scenario_id, compare)
@@ -127,7 +161,8 @@ class MongoSessions:
             adult, reply = it.messages[0].content, it.messages[1].content
             out.append({"turn": it.metadata.get("turn", it.version), "adult": adult,
                         "text": "" if reply == EMPTY_REPLY else reply,
-                        "secs": it.metadata.get("gen_seconds"), "seed": it.metadata.get("seed")})
+                        "secs": it.metadata.get("gen_seconds"), "seed": it.metadata.get("seed"),
+                        "version": it.version, "model": it.model})
         return out
 
     def append(self, session: dict, side: str, turn: dict, model: str, metadata: dict) -> None:
@@ -139,6 +174,26 @@ class MongoSessions:
                       TranscriptMessage(role="assistant", content=turn["text"] or EMPTY_REPLY)]))
         if saved is None:
             raise RuntimeError("conversation not found while saving a turn")
+
+    def recent(self, owner_id: str, limit: int) -> list[dict]:
+        """The owner's saved sessions, newest first, each with "turns" = number of child turns."""
+        out = []
+        for s in self.sessions.find({"owner_id": owner_id}).sort("created_at", -1).limit(limit):
+            cid = s["conversations"].get("child")
+            n = self.transcripts.iterations.count_documents(
+                {"conversation_id": self.transcripts._object_id(cid)}) if cid else 0
+            out.append({**s, "turns": n})
+        return out
+
+    def rate(self, session: dict, side: str, turn: dict, liked: bool, note: str) -> bool:
+        """One row in `feedback`; True when it was stored."""
+        return self.feedback_store.rate(session["conversations"][side], session["owner_id"], turn["version"],
+                                        side, liked, turn["text"], note,
+                                        extra={"session_id": session["_id"], "turn": turn["turn"]})
+
+    def ratings(self, session: dict) -> dict[tuple[str, int], dict]:
+        rows = self.feedback.find({"session_id": session["_id"], "owner_id": session["owner_id"]})
+        return latest_ratings(list(rows.sort([("created_at", 1), ("_id", 1)])))
 
 
 def history(turns: list[dict], since: int = 1, before: Optional[int] = None) -> list[dict]:

@@ -94,7 +94,8 @@ class DemoStore:
             return None
 
     def rate(self, conversation_id: Optional[str], owner_id: str, version: int, side: str,
-             liked: bool, reply: str, note: str = "") -> bool:
+             liked: bool, reply: str, note: str = "", extra: Optional[dict[str, Any]] = None) -> bool:
+        """Insert one rating row; `extra` adds fields (the product API adds session_id and turn)."""
         if not self.enabled or not conversation_id:
             return False
         try:
@@ -104,7 +105,7 @@ class DemoStore:
             self.feedback.insert_one({
                 "conversation_id": oid, "version": version, "side": side, "owner_id": owner_id,
                 "liked": bool(liked), "reply": reply, "note": note.strip(),
-                "created_at": datetime.now(timezone.utc)})
+                "created_at": datetime.now(timezone.utc), **(extra or {})})
             return True
         except Exception as e:
             log.error("could not save feedback: %s", e)
