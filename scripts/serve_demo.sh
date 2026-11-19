@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# Always-on demo service for the desktop (WSL2). Run by scripts/systemd/simulearn-demo.service, or by hand:
+# Demo server for the desktop (WSL2), run on demand. Run by scripts/systemd/simulearn-demo.service, or by hand:
 #   bash scripts/serve_demo.sh [extra chat_demo args, e.g. --selftest]
+# For a test session use scripts/demo_up.sh (starts this unit, the tunnel and MongoDB) and end it with
+# scripts/demo_down.sh, which frees the GPU. Enabling the unit to start at boot is optional and not recommended
+# (it keeps the model in VRAM).
 #
 # - Reads the repo's git-ignored .env (DEMO_PASSWORD, MONGODB_URI, MONGODB_DATABASE) through backend/app/env.py.
 # - Refuses to start without DEMO_PASSWORD, because the tunnel makes the page reachable from outside.
