@@ -1,14 +1,16 @@
 """Tokenize chat examples with loss only on the final child (assistant) reply.
 
-How the mask is built (works for any chat template, tested on Qwen2.5 and SmolLM2):
-    prompt_str = template(messages[:-1], add_generation_prompt=True)   # ...<|im_start|>assistant\n
-    full_str   = template(messages)                                     # prompt + reply + <|im_end|>\n
-    completion = full_str[len(prompt_str):].rstrip()                    # reply + <|im_end|>
+How the mask is built (works for any chat template; tested on Llama 3.x and SmolLM2):
+    prompt_str = template(messages[:-1], add_generation_prompt=True)   # ...<|start_header_id|>assistant<|end_header_id|>\n\n
+    full_str   = template(messages)                                     # prompt + reply + <|eot_id|>
+    completion = full_str[len(prompt_str):].rstrip()                    # reply + <|eot_id|>
 prompt tokens get label -100 (ignored by the loss); completion tokens are learned, including the
-end-of-turn token so the model learns to stop. Trailing whitespace after it is not part of the input.
+end-of-turn token (<|eot_id|> for Llama, <|im_end|> for SmolLM2) so the model learns to stop.
+Trailing whitespace after it is not part of the input.
 
 If an example is longer than max_length, the oldest context turns are dropped (keeping the system
 prompt and at least the last adult turn). If it still does not fit, the example is skipped.
+The template is applied through src.utils.chat_template, which pins the date Llama 3.2 writes into its prompt.
 """
 from __future__ import annotations
 
@@ -17,11 +19,13 @@ from typing import Any
 
 import torch
 
+from src.utils.chat_template import apply_chat_template
+
 IGNORE = -100
 
 
 def _render(tok, messages, add_generation_prompt=False) -> str:
-    return tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=add_generation_prompt)
+    return apply_chat_template(tok, messages, tokenize=False, add_generation_prompt=add_generation_prompt)
 
 
 def encode_example(tok, messages: list[dict], max_length: int = 512) -> dict | None:

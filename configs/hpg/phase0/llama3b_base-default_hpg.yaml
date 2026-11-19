@@ -1,0 +1,24 @@
+run_name: llama3b_base-default_hpg
+hypothesis: 'D11 baseline (no fine-tuning) on HiPerGator: Llama-3.2-3B-Instruct, default system prompt. Expected: replies longer and more adult-like than real 5-year-olds.'
+age_label: 5
+model:
+  name: meta-llama/Llama-3.2-3B-Instruct
+  adapter: null
+  load_in_4bit: false
+  dtype: bfloat16
+data:
+  processed_dir: data/processed
+  bucket: age5
+eval:
+  split: val
+  max_examples: 1000
+  sample_seed: 42
+  prompt_variant: default
+  temperature: 0.7
+  top_p: 0.9
+  max_new_tokens: 60
+  seed: 1234
+  batch_size: 64
+  max_length: 512
+  compute_loss: true
+  loss_batch_size: 4
