@@ -1,11 +1,13 @@
 """Demo logic that doesn't need a model: adapter discovery, prompts, context trimming, and the Space bundle."""
 import importlib.util
+import subprocess
+import sys
 from pathlib import Path
 
 import peft
 import pytest
 
-from src.demo import chat_demo
+from src.demo import chat_demo, engine
 from src.demo.chat_demo import Demo, build_messages, find_adapters, render, system_prompt
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -55,8 +57,22 @@ def test_space_bundle_has_code_and_no_data(tmp_path):
     spec.loader.exec_module(mod)
     files = {p.relative_to(tmp_path / "space").as_posix() for p in mod.build(tmp_path / "space")}
     assert {"app.py", "requirements.txt", "README.md", "configs/demo.yaml", "src/demo/chat_demo.py",
-            "backend/app/main.py"} <= files
+            "src/demo/engine.py", "src/utils/chat_template.py", "src/utils/model_policy.py", "backend/app/main.py"} <= files
     assert not any(f.endswith((".cha", ".jsonl", ".safetensors")) or f.startswith("data/") for f in files)
+
+
+def test_engine_does_not_import_gradio():
+    """The product backend loads the model through src.demo.engine and must not pull in the Gradio UI."""
+    code = "import sys, src.demo.engine; assert 'gradio' not in sys.modules, 'gradio was imported'"
+    done = subprocess.run([sys.executable, "-c", code], cwd=ROOT, capture_output=True, text=True)
+    assert done.returncode == 0, done.stderr
+
+
+def test_chat_demo_reexports_the_engine():
+    """space/app.py, scripts/upload_adapters.sh and older code import these names from chat_demo."""
+    for name in ("Demo", "build_messages", "system_prompt", "render", "find_adapters", "check_4bit", "pick_device",
+                 "SILENCE_RE", "timed"):
+        assert getattr(chat_demo, name) is getattr(engine, name)
 
 
 class FakePeft:
@@ -90,8 +106,8 @@ def fake_loading(monkeypatch):
     loaded = []
     FakePeft.calls = []
     monkeypatch.delenv("SPACES_ZERO_GPU", raising=False)
-    monkeypatch.setattr(chat_demo, "load_tokenizer", lambda name: object())
-    monkeypatch.setattr(chat_demo, "load_model", lambda mcfg: loaded.append(mcfg) or dict(mcfg))
+    monkeypatch.setattr(engine, "load_tokenizer", lambda name: object())
+    monkeypatch.setattr(engine, "load_model", lambda mcfg: loaded.append(mcfg) or dict(mcfg))
     monkeypatch.setattr(peft, "PeftModel", FakePeft)
     return loaded
 
