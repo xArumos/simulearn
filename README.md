@@ -36,15 +36,15 @@ Optional settings: `DEMO_PORT`, `DEMO_HOST`, `DEMO_DEVICE` (`auto`/`cpu`/`cuda`)
    then in Windows PowerShell run `wsl --shutdown` and open Ubuntu again. Check with `systemctl --user status` (no error = working).
 2. Set `DEMO_PASSWORD` in `.env` (`cp .env.example .env` first if you haven't).
 3. If the repo is not at `~/dev/simulearn`, edit the two paths in `scripts/systemd/simulearn-demo.service`.
-4. Install and start it:
+4. Install it (without `enable`, so it only runs when you start it):
    ```bash
    mkdir -p ~/.config/systemd/user
    cp scripts/systemd/simulearn-demo.service ~/.config/systemd/user/
    systemctl --user daemon-reload
-   systemctl --user enable --now simulearn-demo
-   sudo loginctl enable-linger "$USER"   # start it when WSL starts, without waiting for a login shell
    ```
-5. Check: `systemctl --user status simulearn-demo` and `journalctl --user -u simulearn-demo -f` (look for `Demo: ages [...] on cuda` and `serving http://127.0.0.1:7860`).
+5. Start it with `bash scripts/demo_up.sh` (see "Test sessions on the desktop" below) or `systemctl --user start simulearn-demo`. Check: `systemctl --user status simulearn-demo` and `journalctl --user -u simulearn-demo -f` (look for `Demo: ages [...] on cuda` and `serving http://127.0.0.1:7860`).
+
+**Optional, not recommended: start it with WSL.** `systemctl --user enable --now simulearn-demo` plus `sudo loginctl enable-linger "$USER"` keeps the demo running whenever WSL is up. That keeps the model loaded in VRAM all the time (about 3 GiB, and local training no longer fits), so we start it per test session instead. `systemctl --user disable --now simulearn-demo` undoes it.
 
 **Day to day:**
 - `systemctl --user restart simulearn-demo` after pulling new demo code, a new adapter or a `.env` change.
@@ -84,17 +84,28 @@ cloudflared --version
 5. `cp scripts/cloudflared/config.yml.example scripts/cloudflared/config.yml` and fill in the tunnel ID, the full path of the `.json` file and the hostname. `scripts/cloudflared/` is git-ignored except the example.
 6. `bash scripts/tunnel.sh named`, then open `https://demo.<your-domain>`.
 
-**Always on (optional, after the demo service above works):**
+**As a systemd unit (after the demo service above works):**
 ```bash
 cp scripts/systemd/simulearn-tunnel.service ~/.config/systemd/user/
 # named mode: edit ExecStart in the copied file to end in "tunnel.sh named"
 systemctl --user daemon-reload
-systemctl --user enable --now simulearn-tunnel
-journalctl --user -u simulearn-tunnel | grep trycloudflare   # quick mode: today's URL
 ```
-The tunnel unit starts the demo unit too and waits up to 10 minutes for it to listen. `systemctl --user stop simulearn-tunnel` takes the demo off the internet but keeps it running locally; `disable --now` turns it off for good. Quick mode URLs change after every restart (including a PC reboot), so re-check the journal and resend the link, or use named mode.
+The tunnel unit starts the demo unit too and waits up to 10 minutes for it to listen. Start and stop both with the two scripts below. `systemctl --user stop simulearn-tunnel` alone takes the demo off the internet but **keeps the model in VRAM**. Quick mode URLs change after every restart (`journalctl --user -u simulearn-tunnel | grep trycloudflare` shows the current one), so resend the link, or use named mode. `systemctl --user enable --now simulearn-tunnel` would also start the tunnel and the demo with WSL; that is optional and not recommended, for the VRAM reason above.
 
 Settings: `DEMO_PORT` (default 7860; in named mode also change `service:` in `config.yml`), `TUNNEL_CONFIG` (default `scripts/cloudflared/config.yml`), `TUNNEL_WAIT_SECONDS` (default 0 by hand, 600 in the unit).
+
+### Test sessions on the desktop (issue #30)
+
+The model should only be loaded while people are testing, so a session is started and ended by hand:
+```bash
+bash scripts/demo_up.sh      # before the session
+bash scripts/demo_down.sh    # after the session: frees the GPU
+```
+`demo_up.sh` starts MongoDB (`docker compose up -d`), then the tunnel and demo units, waits until the demo listens on `127.0.0.1:7860` (loading the model takes a minute or more), and prints the public URL (each `hostname:` in `scripts/cloudflared/config.yml`; in quick mode the `trycloudflare.com` URL from the journal) and `Demo: saving on` or `Demo: saving OFF (...)`. It stops with a clear message, before starting anything, if the two units aren't in `~/.config/systemd/user/`, `DEMO_PASSWORD` is empty (shell, then `.env`), or Docker isn't usable (if you were just added to the `docker` group, close and reopen the terminal). `--no-db` skips MongoDB, so chats are not saved.
+
+`demo_down.sh` stops `simulearn-tunnel` **and** `simulearn-demo`, then `docker compose stop` (skip that with `--keep-db`), and prints the GPU memory still in use (`nvidia-smi`). Both scripts are safe to run twice and never print the password or `MONGODB_URI`.
+
+Settings: `DEMO_PORT`, `TUNNEL_CONFIG`, `DEMO_UP_WAIT_SECONDS` (wait for the demo to listen, default 600), `DEMO_UP_TUNNEL_WAIT_SECONDS` (wait for the tunnel unit, the quick URL and the saving line, default 30).
 
 **Hosted (one-time setup, done by you; never paste tokens or passwords into a chat or into git):**
 1. Dr. Dever's OK: done 2026-11-03 (DECISIONS.md D9).
