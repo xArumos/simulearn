@@ -45,7 +45,7 @@ Without them, nothing is saved and there is no password. Stop the demo before tr
 <!-- BEGIN HiPerGator section (issue #9) -->
 ## Training on HiPerGator
 
-HiPerGator is UF's computing cluster. You don't run jobs on it directly: you log in to a *login node*, then hand jobs to **SLURM**, the queue system, which runs them on a GPU node when one is free. These scripts queue the whole re-run of Phases 0–2 with one command. The Python code is the same as on the local PC; only `scripts/env_hpg.sh` and `scripts/slurm/` are HiPerGator-specific.
+HiPerGator is UF's computing cluster. You don't run jobs on it directly: you log in to a *login node*, then hand jobs to **SLURM**, the queue system, which runs them on a GPU node when one is free. These scripts queue the whole re-run of Phases 0–2, plus the Phase 3 age-4 adapter, with one command. The Python code is the same as on the local PC; only `scripts/env_hpg.sh` and `scripts/slurm/` are HiPerGator-specific.
 
 | File | What it does |
 |---|---|
@@ -53,10 +53,10 @@ HiPerGator is UF's computing cluster. You don't run jobs on it directly: you log
 | `scripts/slurm/hpg.env.example` | Template for your account, QOS, partition, GPU type and time limits. Copy it to `hpg.env`, which git ignores. |
 | `scripts/slurm/train.sbatch` | One training job: `python -m src.train.sft_lora --config <cfg> --run-id <id> --no-eval --resume`. |
 | `scripts/slurm/evaluate.sbatch` | One evaluation job: `python -m src.eval.evaluate --config <cfg> --run-id <id> [--adapter <dir>]`. |
-| `scripts/slurm/submit_all.sh` | Queues the full chain below. `--dry-run` prints it, `--smoke-only` queues only the smoke tests. |
-| `configs/hpg/` | The configs for every job, copies of the local Phase 0–2 configs. |
+| `scripts/slurm/submit_all.sh` | Queues the full chain below. `--dry-run` prints it, `--smoke-only` queues only the smoke tests, `--only <run_name>` queues one run on its own. |
+| `configs/hpg/` | The configs for every job, copies of the local Phase 0–3 configs. |
 
-**The chain.** Two smoke tests run first: Qwen-1.5B LoRA and Qwen-7B QLoRA, each a 60-step training job followed by an evaluation job. When both pass (SLURM's `--dependency=afterok`), everything else is queued at once: the four Phase 0 baselines (evaluation only), Phase 1 (Qwen-1.5B LoRA 1 epoch, the same with 10 context turns, SmolLM2-360M LoRA) and Phase 2 (Qwen-7B QLoRA). Each training job is followed by its own evaluation job. If a job fails, the jobs waiting on it are cancelled instead of sitting in the queue. Each run writes to `experiments/<YYYYMMDD-HHMM>_<run_name>/`, SLURM's own logs (`slurm-train-<jobid>.out`, `slurm-eval-<jobid>.out`) included.
+**The chain.** Two smoke tests run first: Qwen-1.5B LoRA and Qwen-7B QLoRA, each a 60-step training job followed by an evaluation job. When both pass (SLURM's `--dependency=afterok`), everything else is queued at once: the four Phase 0 baselines (evaluation only), Phase 1 (Qwen-1.5B LoRA 1 epoch, the same with 10 context turns, SmolLM2-360M LoRA), Phase 2 (Qwen-7B QLoRA) and Phase 3 (the run-3 recipe on the age-4 bucket, 48–59 months, which gives the demo its second age). Each training job is followed by its own evaluation job. If a job fails, the jobs waiting on it are cancelled instead of sitting in the queue. Each run writes to `experiments/<YYYYMMDD-HHMM>_<run_name>/`, SLURM's own logs (`slurm-train-<jobid>.out`, `slurm-eval-<jobid>.out`) included.
 
 **Step by step (first time):**
 
@@ -71,6 +71,13 @@ HiPerGator is UF's computing cluster. You don't run jobs on it directly: you log
 7. Check the plan without submitting: `scripts/slurm/submit_all.sh --dry-run`. Each line is one `sbatch` command; `JOB_n` stands in for the job id SLURM will assign.
 8. Run the smoke tests alone the first time: `scripts/slurm/submit_all.sh --smoke-only`. Watch with `squeue -u $USER`, and read `experiments/*_smoke_hpg/slurm-*.out` when they end. Loss should fall and `metrics.json` should appear.
 9. Queue everything: `scripts/slurm/submit_all.sh` (it repeats the two smoke tests as the gate, about an hour of GPU time). You can log out; the jobs keep running. `scancel <jobid>` cancels a job, `sacct -u $USER` lists finished ones.
+
+**One run on its own.** `--only <run_name>` queues just that config, without the smoke gate: a training config becomes a train job plus an eval job that waits for it, a Phase 0 baseline a single eval job. The `run_name` is the one at the top of the config file. For example, to add the age-4 adapter after a chain that was queued without it (`data/processed/age4/` must be on `/blue` first):
+
+    scripts/slurm/submit_all.sh --only qwen1.5b_lora_ep1_age4_hpg --dry-run   # check
+    scripts/slurm/submit_all.sh --only qwen1.5b_lora_ep1_age4_hpg
+
+It writes to `experiments/<YYYYMMDD-HHMM>_qwen1.5b_lora_ep1_age4_hpg/`. Add `--stamp <YYYYMMDD-HHMM>` to file it under an earlier chain's stamp.
 
 A single job can also go in by hand, e.g. `sbatch --account <acct> --qos <qos> --partition <part> --gpus <type>:1 --time 04:00:00 scripts/slurm/evaluate.sbatch configs/hpg/phase0/qwen1.5b_base-default_hpg.yaml my_run_id`.
 <!-- END HiPerGator section (issue #9) -->
