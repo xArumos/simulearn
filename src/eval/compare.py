@@ -103,7 +103,9 @@ def _delta_cell(fn, f, noise, a, b) -> str:
     return f"{fmt(va, f)} → {fmt(vb, f)} ({sign}{diff}){flag}"
 
 
-def delta_table(pairs: list[tuple[Path, Path]]) -> str:
+def delta_table(pairs: list[tuple[Path, Path]], with_reference: bool = False) -> str:
+    """One row per pair A → B. with_reference adds, under each pair, the same shift in the real-child
+    replies (useful when A and B are different age buckets: does the model move the way children do?)."""
     cols = {c: (fn, f) for c, fn, f in COLS}
     head = "| Pair (A → B) | " + " | ".join(c for c, _ in DELTA_COLS) + " |"
     lines = [head, "|---|" + "---|" * len(DELTA_COLS)]
@@ -116,6 +118,10 @@ def delta_table(pairs: list[tuple[Path, Path]]) -> str:
             continue
         cells = [_delta_cell(*cols[c], noise, a, b) for c, noise in DELTA_COLS]
         lines.append(f"| {label} | " + " | ".join(cells) + " |")
+        if with_reference:
+            ra, rb = {"generated": a["reference"]}, {"generated": b["reference"]}
+            cells = [_delta_cell(*cols[c], float("inf"), ra, rb) for c, _ in DELTA_COLS]
+            lines.append(f"| real children ({a['run']['bucket']} → {b['run']['bucket']}) | " + " | ".join(cells) + " |")
     floors = ", ".join(f"{c} ±{n:g}" for c, n in DELTA_COLS)
     return ("\n".join(lines) + f"\n\nEach cell: A → B (B − A). {FLAG} = the difference is larger than the noise floor "
             f"({floors}; rates are fractions, so 0.005 = 0.5 pts). Floors come from re-sampling the same adapter "
@@ -127,11 +133,13 @@ def main() -> None:
     ap.add_argument("runs", nargs="*")
     ap.add_argument("--pair", nargs=2, action="append", metavar=("A", "B"), default=[],
                     help="paired comparison A → B; repeat for more pairs")
+    ap.add_argument("--with-reference", action="store_true",
+                    help="with --pair: add the real-child shift under each pair")
     ap.add_argument("--out", default=None)
     a = ap.parse_args()
     if not a.runs and not a.pair:
         ap.error("give run directories or at least one --pair")
-    t = delta_table([(Path(x), Path(y)) for x, y in a.pair]) if a.pair else table(sorted(Path(x) for x in a.runs))
+    t = delta_table([(Path(x), Path(y)) for x, y in a.pair], a.with_reference) if a.pair else table(sorted(Path(x) for x in a.runs))
     print(t)
     if a.out:
         Path(a.out).parent.mkdir(parents=True, exist_ok=True)

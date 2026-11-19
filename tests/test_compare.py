@@ -79,3 +79,14 @@ def test_delta_table_skips_pairs_with_missing_metrics(tmp_path):
     pending.mkdir()
     t = compare.delta_table([(local, pending)])
     assert "pending_hpg" in t and "no metrics" in t
+
+
+def test_delta_table_reference_row_shows_real_child_shift(tmp_path):
+    a = _run(tmp_path, "age5_run")
+    b = _run(tmp_path, "age4_run", bucket="age4")
+    m = json.loads((b / "metrics.json").read_text())
+    m["reference"]["mean_words"] = 4.1
+    (b / "metrics.json").write_text(json.dumps(m))
+    t = compare.delta_table([(a, b)], with_reference=True)
+    row = next(line for line in t.splitlines() if line.startswith("| real children"))
+    assert "5.10 → 4.10" in row
