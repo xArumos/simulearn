@@ -1,5 +1,19 @@
 import { describe, expect, it, vi } from "vitest";
-import { api, ApiError, errorMessage } from "@/api";
+import { api, ApiError, errorMessage, filenameFromDisposition } from "@/api";
+
+describe("filenameFromDisposition", () => {
+  it("reads quoted, bare and RFC 5987 file names", () => {
+    expect(filenameFromDisposition('attachment; filename="simulearn-20261119-1403-age5-abc.txt"')).toBe(
+      "simulearn-20261119-1403-age5-abc.txt",
+    );
+    expect(filenameFromDisposition("attachment; filename=session.json")).toBe("session.json");
+    expect(filenameFromDisposition("attachment; filename*=UTF-8''s%C3%A9ance.txt")).toBe("séance.txt");
+  });
+  it("returns null without a name", () => {
+    expect(filenameFromDisposition(null)).toBeNull();
+    expect(filenameFromDisposition("attachment")).toBeNull();
+  });
+});
 
 describe("errorMessage", () => {
   it("uses FastAPI's string detail", () => {

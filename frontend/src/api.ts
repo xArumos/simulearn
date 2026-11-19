@@ -191,6 +191,51 @@ export async function request<T>(method: string, path: string, body?: unknown): 
   return data as T;
 }
 
+/** The file name from a Content-Disposition header (`attachment; filename="x.txt"`), or null. */
+export function filenameFromDisposition(header: string | null): string | null {
+  if (!header) return null;
+  const star = /filename\*\s*=\s*(?:UTF-8'')?([^;]+)/i.exec(header);
+  if (star) {
+    try {
+      return decodeURIComponent(star[1].trim().replace(/^"|"$/g, ""));
+    } catch {
+      // fall through to the plain form
+    }
+  }
+  const plain = /filename\s*=\s*(?:"([^"]*)"|([^;]+))/i.exec(header);
+  const name = (plain?.[1] ?? plain?.[2] ?? "").trim();
+  return name || null;
+}
+
+/** An export file fetched from the API, ready to save. */
+export interface ExportFile {
+  filename: string;
+  blob: Blob;
+}
+
+/** GET /api/sessions/{id}/export?format=: the file and the name the server gave it. */
+async function exportSession(sessionId: string, format: ExportFormat): Promise<ExportFile> {
+  let res: Response;
+  try {
+    res = await fetch(api.exportUrl(sessionId, format), { method: "GET", credentials: "same-origin" });
+  } catch {
+    throw new ApiError(0, "Can't reach the SimuLearn server. Check your connection and try again.");
+  }
+  if (!res.ok) {
+    const text = await res.text();
+    let data: unknown = text;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      // keep the raw text
+    }
+    throw new ApiError(res.status, errorMessage(data, res.status));
+  }
+  const blob = await res.blob();
+  const filename = filenameFromDisposition(res.headers.get("Content-Disposition")) ?? `simulearn-session.${format}`;
+  return { filename, blob };
+}
+
 export const api = {
   login: (username: string, password: string) => request<Me>("POST", "/api/auth/login", { username, password }),
   logout: () => request<unknown>("POST", "/api/auth/logout"),
@@ -226,10 +271,14 @@ export const api = {
   /** A download link (the server sends Content-Disposition with a filename); use it as an <a href>. */
   exportUrl: (sessionId: string, format: ExportFormat) =>
     `/api/sessions/${encodeURIComponent(sessionId)}/export?format=${format}`,
+  /** Fetch an export as a file (name from Content-Disposition), to save with `saveFile` (src/lib/download.ts). */
+  exportSession,
 };
 
 export const queryKeys = {
   me: ["me"] as const,
   config: ["config"] as const,
   modelInfo: ["model-info"] as const,
+  sessions: ["sessions"] as const,
+  session: (id: string) => ["sessions", id] as const,
 };

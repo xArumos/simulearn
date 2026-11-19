@@ -11,6 +11,7 @@ import { HistoryPage } from "@/pages/History";
 import { LoginPage } from "@/pages/Login";
 import { NotFoundPage } from "@/pages/NotFound";
 import { PracticePage } from "@/pages/Practice";
+import { SessionViewPage } from "@/pages/SessionView";
 
 export function makeQueryClient() {
   return new QueryClient({
@@ -48,6 +49,7 @@ export function AppRoutes() {
       >
         <Route index element={<PracticePage />} />
         <Route path="history" element={<HistoryPage />} />
+        <Route path="history/:sessionId" element={<SessionViewPage />} />
         <Route path="account" element={<AccountPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>

@@ -1,4 +1,4 @@
-import type { TurnReply } from "@/api";
+import type { Rating, TurnReply } from "@/api";
 
 export type Side = "child" | "untrained";
 
@@ -22,4 +22,6 @@ export interface ChatTurn {
   child: ReplyState;
   /** null when the untrained model was not asked for this turn. */
   untrained: ReplyState | null;
+  /** Saved ratings per side, shown in a read-only (reopened) conversation. */
+  ratings?: Partial<Record<Side, Rating | null>>;
 }

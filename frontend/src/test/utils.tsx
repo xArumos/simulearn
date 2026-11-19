@@ -17,14 +17,16 @@ export function installMockApi(opts: MockApiOptions = {}) {
     const raw = init?.body;
     const out = api.handle({
       method: (init?.method ?? "GET").toUpperCase(),
-      path: url.pathname,
+      path: url.pathname + url.search,
       body: typeof raw === "string" ? JSON.parse(raw) : undefined,
       token: jar.token,
     });
     if (out.setCookie) jar.token = out.setCookie.value;
+    // A raw `text` answer (an export file) goes out as is, with its own headers (Content-Disposition).
+    if (out.text !== undefined) return new Response(out.text, { status: out.status, headers: out.headers });
     return new Response(out.body === undefined ? null : JSON.stringify(out.body), {
       status: out.status,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...out.headers },
     });
   });
   vi.stubGlobal("fetch", fetchMock);
