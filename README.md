@@ -31,6 +31,8 @@ Without them, nothing is saved and there is no password. Stop the demo before tr
 
 Optional settings: `DEMO_PORT`, `DEMO_HOST`, `DEMO_DEVICE` (`auto`/`cpu`/`cuda`), `DEMO_CONFIG`. Extra arguments go to `src/demo/chat_demo.py`, e.g. `bash scripts/serve_demo.sh --selftest`.
 
+**4-bit models:** `load_in_4bit: true` in `configs/demo.yaml` loads the base model in 4-bit NF4 straight onto the GPU, the same form a QLoRA adapter was trained on (Llama-3.1-8B, `DECISIONS.md` D11), so an 8B model fits in the desktop's 12 GB. It needs a CUDA GPU: the demo refuses to start with it on the CPU or on the ZeroGPU Space. Leave it `false` for bf16 models (1B/3B), which is the default. `--selftest` prints the peak VRAM.
+
 **Install as a systemd user service (one time, inside WSL, done by you):**
 1. Turn on systemd in WSL: `sudo nano /etc/wsl.conf` and add
    ```ini
