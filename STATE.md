@@ -1,6 +1,6 @@
 # STATE.md — live session handoff
 
-_Last updated: 2026-11-19 (session 7, synced after PRs #35, #37)_
+_Last updated: 2026-11-19 (session 7, synced after PRs #39, #50, #51, #52)_
 
 **Active work is tracked in GitHub Issues** (https://github.com/xArumos/simulearn/issues). This file is the handoff summary; `/sync-issues` keeps it current. Workflow: `CONTRIBUTING.md`, CLAUDE.md §14.
 
@@ -12,6 +12,13 @@ _Last updated: 2026-11-19 (session 7, synced after PRs #35, #37)_
 - PR #33 (#30): `scripts/demo_up.sh [--no-db]` (checks units/DEMO_PASSWORD/docker, starts Mongo + tunnel + demo, waits for the port, prints URL(s) from the tunnel config and saving on/off) and `scripts/demo_down.sh [--keep-db]` (stops tunnel + demo by name, then Mongo, shows GPU memory). Shared checks moved to `scripts/_demo_env.sh` (sourced by `tunnel.sh`). README uses them; `enable` not recommended. 28 stub tests; 166 pass. Not yet run against the real services.
 - PR #35 (#17): GitHub Pages main button → https://simulearn-demo.arumos.dev (note: works during test sessions; a Cloudflare 530/1033 page means it's off), HF Space is the outlined "backup demo" button with its account steps. README: desktop demo first, HF Space under "Fallback: Hugging Face Space".
 - PR #37 (#36): missing-cloudflared test runs with a tools-only PATH (never runs a real `cloudflared`; runs instead of skipping on the desktop); header comments in `tunnel.sh`, `serve_demo.sh` and both systemd units describe the on-demand flow (`enable` not recommended). 169 pass.
+
+## Session 7b (2026-11-19): Qwen is prohibited; switch to Llama
+- **UF/Florida rule:** no LLMs from countries of concern on UF resources or with UF data, fine-tunes and LoRA adapters included; no idle GPUs on HiPerGator. Qwen (Alibaba) is affected. PR #39: `POLICIES.md` (rules, sources, penalties), CLAUDE.md §2 hard constraints + §8 banner, CONTRIBUTING/README notes, issue/PR template checkbox, **DECISIONS D11 approved** (Dr. Dever's general approval, relayed by Justin; recorded on #40): Llama-3.2-1B / 3B (LoRA, bf16) and Llama-3.1-8B (QLoRA, served in 4-bit, ~6 GB on the 4070 Ti); SmolLM2-360M dropped from new runs; 6-turn context only.
+- **HiPerGator cleanup (Justin, 2026-11-19):** all Qwen weights (whole HF cache), adapters, checkpoints and run outputs deleted; removal list kept for the Research Computing ticket. Llama 3.1 + 3.2 licenses approved; all three Llama models downloaded to the HiPerGator cache (~24 GB). Desktop/this PC still hold Qwen files (not UF hardware; #48 with Dr. Dever). The cached Qwen tokenizer was loaded on this PC by the old masking test before #41 removed it (disclosed in PR #50).
+- PR #50 (#41): 14 Llama configs under `configs/hpg/` (2 smoke, 6 baselines incl. 8B in 4-bit, 6 train runs: 1B/3B LoRA + 8B QLoRA on age5 and age4; run-3 recipe, effective batch 16); `src/utils/chat_template.py` pins the template date (`26 Jul 2024`) for training, eval and demo; masking test on Llama 1B/3B/8B + SmolLM2 (13 pass locally with real tokenizers); `submit_all.sh` chain = 22 Llama jobs, `--only` refuses old configs.
+- PR #52 (#42): `src/utils/model_policy.py` guard (banned orgs + name patterns + adapter base check) runs before any load in `load_tokenizer`/`load_model`, `scripts/gpu_smoke_test.py` (now Llama-3.2-1B) and `submit_all.sh`; CLI `python -m src.utils.model_policy NAME`. 232 tests pass. **The desktop demo now refuses to start** (demo.yaml still names Qwen) until #46.
+- PR #51 (#45): `load_in_4bit` option in `configs/demo.yaml` (default false); loads base + adapters straight onto cuda; refused on CPU and ZeroGPU. Real 4-bit load not yet run (no GPU here; #46 measures it).
 
 ## Session 6 (2026-11-18): issue-driven workflow
 - Added `CONTRIBUTING.md`, issue/PR templates, CI (`.github/workflows/tests.yml` + `requirements-ci.txt`, CPU-only; 75 tests pass in a fresh venv), workflow labels, and `.claude/` (agent `issue-worker`; skills `/plan-issues`, `/work-issue`, `/sync-issues`; project permissions). CLAUDE.md §14.
@@ -59,11 +66,11 @@ _Last updated: 2026-11-19 (session 7, synced after PRs #35, #37)_
 - Liu & Fourtassi (2025, SemDial) supports "LLMs approximate child speech per utterance but diverge over multi-turn interaction (less diverse, over-aligned)". It does NOT support "adult-like". That claim comes from our own Phase 0 baselines.
 
 ## Current phase and step
-HiPerGator re-runs done (Phase 0/1/2 + Phase 3 age-4, PR #28); nothing running. Phase 2 (7B QLoRA) and Phase 3 (age-4) have reports. Phase 1 (LoRA): 4 of 6 local runs done. **Waiting on the user's blind ratings** of `reports/phase1/review_packet.md` (real vs strong baseline vs run 3 vs run 4). Phase 1 exit requires it.
-Live demo (on demand): `bash scripts/demo_up.sh` → https://simulearn-demo.arumos.dev (base Qwen vs run-3 adapter, password-protected); `bash scripts/demo_down.sh` afterwards to free the GPU. Locally, `bash scripts/demo.sh` → http://localhost:7860. Stop the demo before any training (both together exceed 12 GB VRAM).
+**Switching to Llama (D11, tracking #49).** Next: #43 Llama chain on HiPerGator (Justin). The Qwen results below are the historical record only; Qwen may not be run again. Earlier: HiPerGator re-runs done (Phase 0/1/2 + Phase 3 age-4, PR #28). Phase 2 (7B QLoRA) and Phase 3 (age-4) have reports. Phase 1 (LoRA): 4 of 6 local runs done. **Waiting on the user's blind ratings** of `reports/phase1/review_packet.md` (real vs strong baseline vs run 3 vs run 4). Phase 1 exit requires it.
+Live demo: **refuses to start until #46** switches it to Llama (the guard blocks Qwen). Then (on demand): `bash scripts/demo_up.sh` → https://simulearn-demo.arumos.dev (base Qwen vs run-3 adapter, password-protected); `bash scripts/demo_down.sh` afterwards to free the GPU. Locally, `bash scripts/demo.sh` → http://localhost:7860. Stop the demo before any training (both together exceed 12 GB VRAM).
 
 ## Best model so far
-**Tie between run 3 and run 4, to be settled by human ratings.**
+**No permitted model trained yet** (Llama chain #43 pending). Historical Qwen record: tie between run 3 and run 4.
 - Run 3 `20261016-0003_qwen1.5b_lora_ep1` (6-turn context): length KS 0.031 (best), 5.0 words, loss 2.205, "I don't know" 40-49/1,000.
 - Run 4 `20261016-1000_qwen1.5b_lora_ep1_ctx10` (10-turn context): loss 2.176 (best), ~25% fewer "I don't know" (30-34/1,000), but shorter replies (4.4-4.5 words, KS ~0.047).
 - HPG re-runs confirm the tie (`reports/hpg/hpg_vs_local.md`). 7B QLoRA `20261118-2027_qwen7b_qlora_ep1_hpg` has the best loss (2.110) but replies too short; not the new best (`reports/phase2/phase2_report.md`).
@@ -98,8 +105,9 @@ Inside WSL: `source /mnt/c/Users/justin/dev/simulearn-testing/scripts/env_wsl.sh
 From Claude's Windows shell: write a .sh to the scratchpad, then run `wsl.exe -d Ubuntu -- bash /mnt/c/.../that.sh` (with `MSYS_NO_PATHCONV=1`).
 
 ## Next planned actions
-Task list lives on GitHub; tracking issue #18.
-1. Track A (HiPerGator): #8-#12 done. Possible next: add the 7B adapter to the blind review packet (not yet an issue); age-4 adapter into the demo (upload needs Justin's OK).
+Task list lives on GitHub; tracking issues #49 (Llama switch) and #18 (done).
+0. **Llama switch (#49):** #41, #42, #45 done → #43 run the chain on HiPerGator (Justin: `git pull`, `submit_all.sh --dry-run`, `--smoke-only`, then full) → #44 collect results + pick demo model + new review packet → #46 demo switch (measure 4-bit VRAM) and #47 docs → #48 Space / HF adapter repo / paper (Justin + Dr. Dever). #40 open for the Research Computing ticket.
+1. Track A (HiPerGator, Qwen era): #8-#12 done; superseded by the Llama switch.
 2. Track B (self-hosted demo): #13-#17, #30, #31, #36 all done; no open issues. Later: the product frontend on `simulearn.arumos.dev` (not yet issues; `tunnel.sh`'s port-7860 check will need updating).
 3. Still open, not yet issues: Phase 1 ratings → pick run 3 vs 4 (`python -m src.eval.score_ratings --phase phase1`), optional runs 5-6, Phase 1 report. Rebuild the meeting notebook after new results (`python scripts/build_meeting_notebook.py`).
 
@@ -107,8 +115,10 @@ Task list lives on GitHub; tracking issue #18.
 - First real run of `bash scripts/demo_up.sh` / `demo_down.sh` on the desktop (only stub-tested so far).
 - Optional: run the `mongosh` migration in the `src/demo/store.py` docstring so the 3 old ratings join to their chats.
 - Run `scripts/db_backup.sh` once to verify backups for real (#13 follow-up; Docker + Mongo are now up).
-- **UF rule on country-of-concern LLMs:** Florida law / UF policy bars LLMs from countries of concern (Qwen is from Alibaba) on UF resources or with UF data. Affects the HiPerGator Qwen runs and possibly the Qwen-based demo. Switching the base model is RED (CLAUDE.md §3): Justin + Dr. Dever to decide, including what to do with the existing HiPerGator artifacts.
-- **Blind ratings:** fill in `reports/phase1/review_ratings.csv` (28 items x 4 replies; 1-5 child-likeness, coherence, age-appropriateness). Each teammate can rate their own copy. Don't open `review_key.json` until done. Local only, git-ignored (CHILDES text).
+- **#43:** run the Llama chain on HiPerGator (smoke first).
+- **#40:** report the Qwen cleanup in a UF Research Computing ticket (attach the removal list).
+- **#48 (later):** with Dr. Dever: Qwen files on the desktop / HF adapter repo, the public Space, and the summit paper (names Qwen).
+- **Blind ratings** (Qwen packet; now mainly informs the 6- vs 10-turn question, a new Llama packet comes from #44): fill in `reports/phase1/review_ratings.csv` (28 items x 4 replies; 1-5 child-likeness, coherence, age-appropriateness). Each teammate can rate their own copy. Don't open `review_key.json` until done. Local only, git-ignored (CHILDES text).
 - Decide whether to spend runs 5-6 before or after the ratings.
 - Non-blocking: Dr. Dever to confirm Cameron (Eng-AAE). Ask Dante to delete the public `Dante7162-patch-1` branch (contains `Gleason.zip`).
 
