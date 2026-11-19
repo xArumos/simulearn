@@ -8,7 +8,7 @@ Data: CHILDES (MacWhinney, B. (2000). *The CHILDES Project: Tools for Analyzing 
 
 ## Team demo in the browser
 
-The side-by-side chat demo (untrained Qwen vs our fine-tuned child model, one adapter per age) is `src/demo/chat_demo.py`. Testers reach it in this order:
+The side-by-side chat demo (untrained Llama-3.2-3B vs our fine-tuned child model, one adapter per age; `DECISIONS.md` D11) is `src/demo/chat_demo.py`. Testers reach it in this order:
 1. **Desktop demo (main path):** the demo runs on Justin's PC during test sessions and is shared at https://simulearn-demo.arumos.dev through a named Cloudflare Tunnel, behind the demo password. It is **on demand**: started with `bash scripts/demo_up.sh` and stopped with `bash scripts/demo_down.sh`, so the model doesn't hold GPU memory between sessions. While it's off, the URL shows a Cloudflare "tunnel offline" error (HTTP 530).
 2. **Hugging Face Space (fallback):** the same demo on a free ZeroGPU Space, for when the desktop demo is off. See "Fallback: Hugging Face Space" below.
 
