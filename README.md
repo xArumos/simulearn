@@ -96,7 +96,7 @@ cp scripts/systemd/simulearn-tunnel.service ~/.config/systemd/user/
 # named mode: edit ExecStart in the copied file to end in "tunnel.sh named"
 systemctl --user daemon-reload
 ```
-The tunnel unit starts the demo unit too and waits up to 10 minutes for it to listen. Start and stop both with the two scripts below. `systemctl --user stop simulearn-tunnel` alone takes the demo off the internet but **keeps the model in VRAM**. Quick mode URLs change after every restart (`journalctl --user -u simulearn-tunnel | grep trycloudflare` shows the current one), so resend the link, or use named mode. `systemctl --user enable --now simulearn-tunnel` would also start the tunnel and the demo with WSL; that is optional and not recommended, for the VRAM reason above.
+The tunnel unit does not start an app by itself (so starting it for the product never loads the demo too); it waits up to 10 minutes for an app to listen. Start and stop the demo and the tunnel with the two scripts below. In named mode, `tunnel.sh` checks every `service:` port in `config.yml`: it refuses only when none of them is listening, and prints a warning for each one that is down, so the demo or the product (see "Run the product") can run alone behind the same tunnel. `DEMO_PASSWORD` is required whenever the tunnel reaches the demo's port. `systemctl --user stop simulearn-tunnel` alone takes the demo off the internet but **keeps the model in VRAM**. Quick mode URLs change after every restart (`journalctl --user -u simulearn-tunnel | grep trycloudflare` shows the current one), so resend the link, or use named mode. `systemctl --user enable --now simulearn-tunnel` would also start the tunnel and the demo with WSL; that is optional and not recommended, for the VRAM reason above.
 
 Settings: `DEMO_PORT` (default 7860; in named mode also change `service:` in `config.yml`), `TUNNEL_CONFIG` (default `scripts/cloudflared/config.yml`), `TUNNEL_WAIT_SECONDS` (default 0 by hand, 600 in the unit).
 
@@ -112,6 +112,46 @@ bash scripts/demo_down.sh    # after the session: frees the GPU
 `demo_down.sh` stops `simulearn-tunnel` **and** `simulearn-demo`, then `docker compose stop` (skip that with `--keep-db`), and prints the GPU memory still in use (`nvidia-smi`). Both scripts are safe to run twice and never print the password or `MONGODB_URI`.
 
 Settings: `DEMO_PORT`, `TUNNEL_CONFIG`, `DEMO_UP_WAIT_SECONDS` (wait for the demo to listen, default 600), `DEMO_UP_TUNNEL_WAIT_SECONDS` (wait for the tunnel unit, the quick URL and the saving line, default 30).
+
+`demo_up.sh` refuses to start while the product (below) is running: only one GPU app at a time.
+
+### Run the product (issue #63, DECISIONS.md D12)
+
+The educator product (React frontend + FastAPI API, `src/product/server.py`) is served at **https://simulearn.arumos.dev** through the same named tunnel as the demo (`simulearn-demo`, two hostnames). It runs on demand, like the demo, and **only one of the two runs at a time** (both don't fit in 12 GB VRAM). Accounts are invite-only and live in MongoDB, so MongoDB is always up while the product runs. **Team only** until issue #57 (IRB question) is answered: do not invite educators or other outside users.
+
+**One-time setup (done by you, inside WSL):**
+1. Build the frontend: `bash scripts/build_frontend.sh` (re-run after pulling frontend changes).
+2. Start MongoDB (`docker compose up -d`) and create the first admin account. The password is typed at a hidden prompt:
+   ```bash
+   python scripts/create_user.py create <username> --name "<Your Name>" --role admin
+   python scripts/create_user.py list
+   ```
+3. Route the hostname to the tunnel (done for `simulearn.arumos.dev`): `cloudflared tunnel route dns simulearn-demo simulearn.<your-domain>`.
+4. Add the product to the real, git-ignored `scripts/cloudflared/config.yml`, **above** the `http_status:404` catch-all (compare with `config.yml.example`):
+   ```yaml
+     - hostname: simulearn.<your-domain>
+       service: http://127.0.0.1:8000
+   ```
+5. Install the units (the tunnel unit changed in this issue: it no longer starts the demo by itself, so copy it again and put `named` back at the end of its `ExecStart`):
+   ```bash
+   cp scripts/systemd/simulearn-product.service scripts/systemd/simulearn-tunnel.service ~/.config/systemd/user/
+   # edit ~/.config/systemd/user/simulearn-tunnel.service: ExecStart must end in "tunnel.sh named"
+   systemctl --user daemon-reload
+   ```
+6. Leave `SIMULEARN_COOKIE_SECURE` unset in `.env`. `=0` is only for testing on plain `http://127.0.0.1`; `product_up.sh` refuses to put the product online with it.
+
+**A session:**
+```bash
+bash scripts/product_up.sh              # MongoDB + product + tunnel; conversations saved to MongoDB
+bash scripts/product_up.sh --no-save    # the same, but conversations stay in memory (SIMULEARN_SAVE_CHATS=0)
+bash scripts/product_down.sh            # after the session: frees the GPU, stops MongoDB
+bash scripts/product_down.sh --keep-db  # ... but leave MongoDB running
+```
+`product_up.sh` refuses before starting anything if the units aren't installed, the tunnel unit is in quick mode or still starts the demo, `config.yml` has no hostname for `127.0.0.1:8000`, the login cookie is set to insecure, Docker isn't usable, or the demo is running (`bash scripts/demo_down.sh --keep-db` first). It then starts MongoDB, the product (waits until it listens on `127.0.0.1:8000`; loading the model takes a minute or more) and the tunnel, and prints the public URL and `SimuLearn: saving on` or `SimuLearn: saving OFF (...)`.
+
+`scripts/serve_product.sh` is what the unit runs (you can also run it by hand). It binds `127.0.0.1:8000` and refuses to start if `frontend/dist` is missing, the demo is running, or there is no active admin account (`python scripts/create_user.py has-admin`; it prints no accounts). `product_up.sh` shows that refusal line straight away. Settings: `PRODUCT_PORT`, `PRODUCT_HOST`, `PRODUCT_DEVICE` (`auto`/`cpu`/`cuda`), `PRODUCT_CONFIG`, `PRODUCT_UP_WAIT_SECONDS` (default 600), `PRODUCT_UP_TUNNEL_WAIT_SECONDS` (default 30).
+
+Accounts: `python scripts/create_user.py create|disable|enable|reset-password|list` (MongoDB must be up; `product_down.sh --keep-db` keeps it up). There is no sign-up page.
 
 ### Fallback: Hugging Face Space
 

@@ -4,6 +4,23 @@ YELLOW and RED decisions, with what / why / evidence. Newest first.
 
 ---
 
+## 2026-11-19 — D12 (YELLOW): Serve the educator product on simulearn.arumos.dev (issue #63)
+**What:**
+- The educator product (React SPA in `frontend/` + FastAPI API in `src/product/server.py`, issues #58-#61) is served from the desktop at `https://simulearn.arumos.dev`, on demand: `scripts/product_up.sh` / `scripts/product_down.sh`, systemd user unit `simulearn-product.service` (not enabled at boot), server on `127.0.0.1:8000` only.
+- **Same tunnel, second hostname.** The existing named tunnel `simulearn-demo` carries both hostnames (demo on `:7860`, product on `:8000`); no second tunnel or credentials file. `tunnel.sh named` now checks every ingress port: it refuses only when none is listening and warns for the ones that are down, so either app can run alone. `DEMO_PASSWORD` is still required whenever the tunnel reaches the demo port.
+- **Invite-only accounts** in MongoDB (`scripts/create_user.py`, no sign-up page). `serve_product.sh` refuses to start without an active admin account (`create_user.py has-admin`, which prints no accounts), without the built frontend, or while the demo is running. `product_up.sh` refuses `SIMULEARN_COOKIE_SECURE=0` (plain-http testing only).
+- **MongoDB always runs with the product**, because accounts live there. "Saving off" is `product_up.sh --no-save` (`SIMULEARN_SAVE_CHATS=0`: accounts in MongoDB, conversations in memory), not `--no-db`.
+- **One GPU app at a time.** `serve_product.sh` and `product_up.sh` refuse while the demo runs; `demo_up.sh` refuses while the product runs. The tunnel unit no longer has `Wants=simulearn-demo.service`, so starting it for the product does not load the demo (the installed copy must be replaced; `product_up.sh` detects an old one).
+- **Team only** until issue #57 (Dr. Dever, IRB: educators outside the team) is answered. Accounts are created only for team members.
+
+**Why:** the team needs to try the product the way educators would, from a browser, without a second machine or paid hosting. Reusing the tunnel keeps one set of Cloudflare credentials (outside the repo). Each app loads its own copy of the model, and with the planned 8B 4-bit model (~6 GB, D11) two copies plus generation do not fit in 12 GB, so we don't support running both.
+
+**Evidence:** `tests/test_product_service.py` and `tests/test_tunnel.py` (stub `systemctl`, `docker`, `journalctl`, `cloudflared`, `python`; nothing real is started): start order, `--no-save`, every refusal, the tunnel with one backend down, and the parser for ingress rules. No live run in this PR; Justin's first `product_up.sh` is the end-to-end check.
+
+**Trade-offs:** the product is up only while the desktop and WSL are on. The demo and the product can't be shown at the same time; switching costs a model load (a minute or so).
+
+---
+
 ## 2026-11-19 — D11 (RED, proposed; waiting on Justin and Dr. Dever): Replace Qwen; base models from outside countries of concern
 **Why:** UF prohibits LLMs developed by organizations in or controlled by a foreign country of concern on any UF computing resource, fine-tunes and LoRA adapters included, with no exceptions (`POLICIES.md` §1). Qwen is developed by Alibaba Cloud (China). Justin found the rule on 2026-11-19, after the HiPerGator chain `20261118-2027` had run.
 

@@ -282,6 +282,13 @@ def test_up_fails_when_the_port_belongs_to_something_else(s, listener):
     assert "simulearn-demo is not running" in out.stderr
 
 
+def test_up_refuses_while_the_product_runs(s, listener):
+    s.flag("active-simulearn-product")  # issue #63: one GPU app at a time
+    out = s.run(UP, DEMO_PORT=str(listener))
+    assert out.returncode != 0 and "product_down.sh --keep-db" in out.stderr
+    assert_nothing_started(s)
+
+
 def test_up_rejects_unknown_flags(s, listener):
     out = s.run(UP, "--keep-db", DEMO_PORT=str(listener))
     assert out.returncode != 0 and "usage" in out.stderr
