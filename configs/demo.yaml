@@ -14,10 +14,10 @@ decoding:                   # same as evaluation (CLAUDE.md §9.1)
 adapters:
   4:
     path: experiments/20261119-1127_llama3b_lora_ep1_age4_hpg/adapter
-    label: Llama-3B (48-59 months)
+    label: 48-59 months
   5:
     path: experiments/20261119-1127_llama3b_lora_ep1_hpg/adapter
-    label: Llama-3B (60-71 months)
+    label: 60-71 months
   6:
     path: null              # Samaree's age-6 run (age6-bucket branch), not trained yet
-    label: age-6 bucket (72-83 months)
+    label: 72-83 months
