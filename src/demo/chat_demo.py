@@ -1,6 +1,7 @@
 """Live side-by-side demo: untrained Qwen vs the fine-tuned child model, for the same adult line.
 
-    python -m src.demo.chat_demo [--config configs/demo.yaml] [--adapters-dir DIR] [--port 7860] [--selftest]
+    python -m src.demo.chat_demo [--config configs/demo.yaml] [--adapters-dir DIR] [--host 0.0.0.0] [--port 7860]
+                                 [--device auto|cpu|cuda] [--require-password] [--selftest]
 
 You type the adult's lines and pick the child's age (one LoRA adapter per age bucket, listed in
 configs/demo.yaml; ages without an adapter are hidden). Each model keeps its own conversation history,
@@ -12,6 +13,7 @@ no CHILDES text is shipped in the demo.
 Optional environment variables: MONGODB_URI saves chats and 👍/👎 ratings (src/demo/store.py);
 DEMO_PASSWORD puts a password on the page (any username). When run with main(), they are also read from the
 repo's git-ignored .env (template: .env.example; local MongoDB: docker-compose.yml).
+The always-on desktop service (scripts/serve_demo.sh) binds 127.0.0.1 and requires DEMO_PASSWORD.
 """
 from __future__ import annotations
 
@@ -60,6 +62,21 @@ def build_messages(system: str, history: list[dict], adult_line: str, context_tu
 
 def system_prompt(age: int, strong: bool = False) -> str:
     return (STRONG_PROMPT if strong else SYSTEM_PROMPT).format(age=age)
+
+
+def pick_device(choice: str = "auto") -> str:
+    """auto = cuda when a GPU is visible, else cpu (CUDA_VISIBLE_DEVICES="" simulates a machine without one)."""
+    if choice == "auto":
+        return "cuda" if torch.cuda.is_available() else "cpu"
+    if choice == "cuda" and not torch.cuda.is_available():
+        raise SystemExit("--device cuda, but no CUDA GPU is visible. Use --device auto or cpu.")
+    return choice
+
+
+def check_password(required: bool) -> None:
+    """The service is reachable through the tunnel, so it refuses to start without a password."""
+    if required and not os.getenv("DEMO_PASSWORD"):
+        raise SystemExit("DEMO_PASSWORD is empty. Set it in the repo's .env (template: .env.example) and start again.")
 
 
 def render(text: str) -> str:
@@ -225,23 +242,35 @@ def build_ui(demo: Demo, store: DemoStore, reply_both=None):
     return ui
 
 
-def launch(ui, port: int) -> None:
+def launch(ui, port: int, host: str = "0.0.0.0") -> None:
     password = os.getenv("DEMO_PASSWORD")
     auth = (lambda _user, pw: pw == password) if password else None
-    ui.launch(server_name="0.0.0.0", server_port=port, show_error=True, auth=auth,
+    ui.launch(server_name=host, server_port=port, show_error=True, auth=auth,
               auth_message="Type any username and the team password (ask Justin)." if password else None)
 
 
-def main() -> None:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default=DEFAULT_CONFIG)
     ap.add_argument("--adapters-dir", default=None, help="folder with age<N>/ adapter subfolders (the hosted Space)")
+    ap.add_argument("--host", default="0.0.0.0", help="127.0.0.1 = this machine only (the desktop service)")
     ap.add_argument("--port", type=int, default=7860)
+    ap.add_argument("--device", choices=["auto", "cpu", "cuda"], default="auto", help="auto = cuda if available")
+    ap.add_argument("--require-password", action="store_true", help="refuse to start when DEMO_PASSWORD is empty")
     ap.add_argument("--selftest", action="store_true", help="run two invented lines through each model and exit")
-    a = ap.parse_args()
+    return ap.parse_args(argv)
+
+
+def main() -> None:
+    a = parse_args()
     load_env_file()  # MONGODB_URI / MONGODB_DATABASE / DEMO_PASSWORD from the repo's .env; shell variables win
+    if not a.selftest:
+        check_password(a.require_password)
     cfg = load_config(resolve(a.config))
-    demo = Demo(cfg, find_adapters(cfg, a.adapters_dir))
+    adapters = find_adapters(cfg, a.adapters_dir)
+    device = pick_device(a.device)
+    print(f"Demo: ages {sorted(adapters)} on {device}", flush=True)
+    demo = Demo(cfg, adapters, device=device)
     if a.selftest:
         for age in sorted(demo.adapters):
             hist_b, hist_f = [], []
@@ -258,7 +287,10 @@ def main() -> None:
         if torch.cuda.is_available():
             print(f"VRAM peak {torch.cuda.max_memory_allocated() / 2**30:.2f} GiB")
         return
-    launch(build_ui(demo, DemoStore.from_env()), a.port)
+    store = DemoStore.from_env()
+    print(f"Demo: saving {'on' if store.enabled else 'OFF (MONGODB_URI empty or MongoDB unreachable)'}; "
+          f"serving http://{a.host}:{a.port}", flush=True)
+    launch(build_ui(demo, store), a.port, host=a.host)
 
 
 if __name__ == "__main__":
