@@ -122,3 +122,72 @@ All Phase 0/1 evaluations use the same 1,000-example deterministic sample of the
 **Cost:** 5.26 hours training, peak allocated GPU memory 3.19 GiB. Best checkpoint at step 510.
 **Loss:** training 2.4402; best validation loss during training 2.3078; post-training validation target loss 2.5179 (perplexity 12.40).
 **Validation generation:** mean 7.63 words (reference 7.58), length Wasserstein 0.683, degeneration 0.1%; reproducibility passed on 32 examples. See `gleason-adult-pilot/metrics.json` for aggregate metrics. Generated samples, adapters, checkpoints, and transcript text are excluded from Git.
+
+---
+
+## HiPerGator re-run — chain 20261118-2027 (2026-11-18)
+
+**What:** the whole Phase 0–2 pipeline plus the Phase 3 age-4 run, re-run on HiPerGator (one RTX PRO 6000 Blackwell, 96 GB) with the same configs, data and decoding as the local runs. All 16 SLURM jobs exited 0. Purpose: one same-hardware comparison for the team and the paper, and the first Phase 2 (7B QLoRA) and Phase 3 (age 4) results.
+**Tables:** `reports/phase0/comparison_hpg.md`, `reports/phase1/comparison_hpg.md`, `reports/phase2/comparison.md`, `reports/phase3/`, `reports/hpg/hpg_vs_local.md`, `reports/hpg/smoke.md`. Rebuild all of them with `scripts/hpg_tables.sh` (no GPU).
+**Same data:** train 30,314 examples (42 skipped >512 tokens), val 1,000 examples with 8,899 child tokens, identical to the local runs.
+**Gates (§9.2), every run below:** pytest green (141 tests, including the real-data leakage test for both buckets and the masking tests); reproducibility 32/32 identical replies for all 11 runs; train loss ≥ val loss and no near-zero loss (train/val: run 3 2.40/2.205, run 4 2.37/2.176, SmolLM2 2.39/2.269, 7B 2.31/2.110, age 4 2.36/2.160). **All pass.**
+**"I don't know" counter** used below: replies that *contain* "I don't know" per 1,000 (a looser count than the one in the run 3/4 entries; local runs recounted the same way for comparison). Real children: 15 (age 5).
+
+### Smoke tests (not in the main tables, not counted in the budget)
+- `20261118-2027_qwen1.5b_lora_smoke_hpg`: 200 ex, 60 steps, 14 s, peak 6.7 GB. Val loss 2.447 (local 2.45). **Pass.**
+- `20261118-2027_qwen7b_qlora_smoke_hpg`: 200 ex, 60 steps, 26 s, peak 12.9 GB. Val loss 2.384. **Pass**, so the 7B run went ahead.
+
+### Phase 0 baselines on HPG
+`*_qwen1.5b_base-default_hpg`, `*_qwen1.5b_base-strong_hpg`, `*_smol360m_base-default_hpg`, `*_smol360m_base-strong_hpg`.
+Loss matches local to ±0.001 for all four. Ranking unchanged: Qwen + strong prompt is still the strongest baseline (mean words 5.73, len KS 0.043, marker gap 0.032, degenerate 2.7%, loss 3.476).
+
+### Phase 1 on HPG
+| Run (HPG) | Local counterpart | Mean words (real 5.10) | Len KS ↓ | Marker gap ↓ | Degen ↓ | dist-2 | "I don't know" | Child loss ↓ | Train time / peak VRAM |
+|---|---|---|---|---|---|---|---|---|---|
+| `*_qwen1.5b_lora_ep1_hpg` | run 3 | 4.92 | **0.027** | 0.024 | 0.5% | 0.586 | 70 (local 56 / 70) | 2.205 | 10 min / 10.5 GB |
+| `*_qwen1.5b_lora_ep1_ctx10_hpg` | run 4 | 4.60 | 0.046 | **0.022** | 0.8% | 0.599 | 59 (local 56 / 45) | **2.176** | 13 min / 10.5 GB |
+| `*_smol360m_lora_r16_lr2e-4_hpg` | run 2 | 3.12 | 0.172 | 0.042 | 0.5% | 0.600 | 55 (local 52) | 2.270* | 19 min / 3.4 GB |
+
+\*SmolLM2 loss uses a different tokenizer and can't be compared with Qwen's.
+**Verdict: reproduced.** Run 3 vs run 4 is the same trade-off as locally: run 3 has the better length distribution and run 4 the lower loss. The tie still goes to the human ratings. SmolLM2 is still clearly worse on length.
+**HPG vs local** (`reports/hpg/hpg_vs_local.md`): child loss matches to ≤0.004 on every run. Hardware (GPU numerics) changes which tokens get sampled, so the generation metrics move like a new sampling seed. Most differences are inside the noise floor or only just outside it (run 3 marker gap +0.005 vs a ±0.004 floor; dist-2 −0.021 to −0.025 vs ±0.02). The one larger shift: SmolLM2 LoRA distinct-2 rose 0.532 → 0.600 while unique replies stayed the same (652 → 647). It does not change any conclusion. Baseline degeneration moved by up to 1.2 pts; at a ~6% rate on 1,000 replies, that is within one binomial standard error (~1.1 pts). The ±0.5 pt floor was measured on fine-tuned runs with ~0.5% degeneration and is too tight for baselines.
+**Read 20 samples** (run 3 HPG): same character as locally. Short, child-like, sometimes mirrors the adult's words, some counting and alphabet runs.
+
+### Phase 2 — 20261118-2027_qwen7b_qlora_ep1_hpg
+**Hypothesis:** a 4x larger base model (Qwen2.5-7B, 4-bit NF4 QLoRA) with the run 3 recipe is more child-like than LoRA on 1.5B.
+**Config diff vs run 3:** `model.name: Qwen/Qwen2.5-7B-Instruct`, `load_in_4bit: true` (eval batch 32 instead of 64).
+**Cost:** 36 min train, peak 17.5 GB at batch 8 × accum 2 (would not fit the local 12 GB card at this batch size; not tested locally). Eval 33 s.
+**Val loss:** 2.226 (0.25 ep) → 2.160 → 2.124 → **2.110 (1.0 ep)**, below run 3 at every checkpoint (run 3: 2.3135 → 2.2487 → 2.214 → 2.204). Same tokenizer family as Qwen-1.5B, so this is directly comparable: 4.3% lower than run 3 (2.205) and 3.0% lower than run 4 (2.176).
+
+| Metric | Real | Strong baseline (HPG) | Run 3 (HPG) | Run 4 (HPG) | 7B QLoRA |
+|---|---|---|---|---|---|
+| Mean / median words | 5.10 / 3 | 5.73 / 3 | 4.92 / 3 | 4.60 / 3 | 3.41 / 2 |
+| >20 words | 2.4% | 4.3% | 2.7% | 2.1% | 0.9% |
+| Len KS ↓ | – | 0.043 | **0.027** | 0.046 | 0.142 |
+| Short answers | 15.6% | 16.3% | 22.0% | 24.1% | 26.6% |
+| Marker gap ↓ | – | 0.032 | 0.024 | **0.022** | 0.036 |
+| Degenerate ↓ | 0.8% | 2.7% | 0.5% | 0.8% | **0.3%** |
+| dist-1 / dist-2 | 0.200 / 0.726 | 0.200 / 0.731 | 0.148 / 0.586 | 0.161 / 0.599 | **0.194 / 0.629** |
+| "I don't know" / bare "yeah"/"yes" per 1,000 | 15 / 56 | 3 / 44 | 70 / 79 | 59 / 80 | **46** / 105 |
+| Child loss ↓ | – | 3.476 | 2.205 | 2.176 | **2.110** |
+
+**Verdict: mixed. Not a new best on the §9.1 definition.** The 7B model is best on loss, degeneration, diversity and the "I don't know" habit. It is clearly worse on the length distribution (KS 0.142, worse than even the strong baseline) and on child markers (gap 0.036). Its replies are too short: median 2 words, more bare "yeah"/"yes" replies (105 vs 56 real), and it almost never produces the longer multi-sentence turns that real 5-year-olds sometimes do.
+**Read 22 samples** (side by side with run 3): coherent and on-topic, more often a direct answer to the adult's question than the 1.5B model gives, but clipped to two or three words. Fewer off-topic or disengaged replies than run 3.
+**Next:** see the Phase 2 recommendation in `reports/phase2/phase2_report.md`. Add the 7B model to the blinded review packet alongside runs 3 and 4.
+
+### Phase 3 — 20261118-2027_qwen1.5b_lora_ep1_age4_hpg
+**Hypothesis:** the run 3 recipe on the age-4 bucket (48–59 months) produces replies that differ from the age-5 model the way real 4-year-olds differ from 5-year-olds.
+**Config diff vs run 3:** `data.bucket: age4`, `age_label: 4` (system prompt says 4-year-old). 34,565 train examples (44 skipped >512 tokens), 999 val.
+**Cost:** 12 min train, peak 10.5 GB. **Val loss:** 2.274 → 2.208 → 2.169 → **2.160 (1.0 ep)**. Train 2.36. Loss uses a different val set than age 5, so it can't be compared across buckets.
+
+| Shift age 5 → age 4 | Real children | Model (run 3 recipe) |
+|---|---|---|
+| Mean words | 5.10 → 4.16 (−0.94) | 4.92 → 3.58 (−1.34) |
+| Short answers | 15.6% → 17.6% (+2.0 pts) | 22.0% → 25.2% (+3.2 pts) |
+| Degenerate | 0.8% → 1.1% | 0.5% → 0.2% |
+| dist-2 | 0.726 → 0.712 | 0.586 → 0.594 |
+| "I don't know" per 1,000 | 15 → 19 | 70 → 43 |
+
+Within its own bucket the age-4 model has len KS 0.077 (age 5: 0.027), marker gap 0.028 and degeneration 0.2%.
+**Finding (report only, no per-bucket tuning):** the age-4 outputs are measurably different from the age-5 outputs, in the same direction as real children (shorter, more short answers). The model overshoots: it drops 1.34 words where children drop 0.94, so its length fit is worse than at age 5. Gates pass (above).
+**Adapters:** all on HiPerGator and in the main checkout, not in git. Upload with `scripts/upload_adapters.sh` only after Justin approves.
