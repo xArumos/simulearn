@@ -4,6 +4,27 @@ YELLOW and RED decisions, with what / why / evidence. Newest first.
 
 ---
 
+## 2026-11-18 — D10 (YELLOW): Self-host the demo and its database on the desktop
+**What:** The always-on demo now runs on Justin's desktop (RTX 4070 Ti, WSL2) as a systemd user service (`scripts/serve_demo.sh`, `scripts/systemd/simulearn-demo.service`), and saves chats to the local MongoDB from issue #13 (`docker-compose.yml`) instead of MongoDB Atlas. This replaces the Hugging Face Space as the main way for the team to try the model.
+- It binds `127.0.0.1:7860` only; a tunnel exposes it to testers, the LAN cannot reach it.
+- It refuses to start without `DEMO_PASSWORD` (new `--require-password` flag in `chat_demo.py`), because the tunnel makes it reachable from outside.
+- It loads every age adapter in `configs/demo.yaml` that exists under `experiments/`, uses the GPU when one is visible and the CPU otherwise (new `--device auto|cpu|cuda`).
+- If MongoDB is down it still starts and prints `saving OFF`, as before.
+
+**Why:**
+- On the Space's ZeroGPU, the per-visitor GPU quota let a tester without an HF account send only about one message (D9, quota update). Asking every tester to make an HF account is friction we don't need.
+- Training has moved to HiPerGator (issue #9), so the desktop GPU is free most of the time.
+- Atlas is not needed when the demo runs next to a local MongoDB; chats then stay on the team's own machine.
+
+**Evidence (2026-11-18, age-5 adapter, invented test lines):**
+- GPU: `serve_demo.sh --selftest` ran on cuda, fine-tuned reply 0.2-0.3 s, untrained 1.2-2.2 s, peak VRAM 2.97 GiB.
+- CPU (`CUDA_VISIBLE_DEVICES=""`, simulating a machine without a GPU): ran on cpu, fine-tuned 1.5-1.9 s, untrained ~17 s.
+- Service mode on CPU with MongoDB not running: listened on `127.0.0.1` only, printed `saving OFF`, `/config` returned 401 before login. Without `DEMO_PASSWORD` it exits with code 1 and a clear message.
+
+**Trade-offs / fallback:** the demo is up only while the desktop is on and WSL is running (WSL stops when Windows sleeps), and the service must be stopped before any local GPU job (12 GB VRAM). The HF Space and its Atlas database stay deployed as a fallback; nothing in D9 is removed. Same D9 limits apply: team testing only, no educators or outside users until the IRB question is settled.
+
+---
+
 ## 2026-11-03 — D9 (RED, approved by Justin and by Dr. Dever): Hosted team demo (D7-D8 are on the age6-bucket branch)
 **What:** A browser demo for the team and advisors.
 - **App:** the existing Gradio side-by-side (`src/demo/chat_demo.py`), now with an age picker and 👍/👎 ratings, runs on a free Hugging Face Space (CPU).
