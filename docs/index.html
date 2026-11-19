@@ -29,6 +29,7 @@
   .lede { color: var(--muted); margin: 0 0 28px; }
   .cta { display: inline-block; background: var(--accent); color: var(--accent-text); text-decoration: none;
          font-weight: 600; font-size: 1.1rem; padding: 14px 26px; border-radius: 10px; }
+  .cta.secondary { background: transparent; color: var(--accent); border: 2px solid var(--accent); font-size: 1rem; padding: 10px 20px; }
   .cta:focus-visible { outline: 3px solid var(--text); outline-offset: 3px; }
   .note { background: var(--note-bg); border: 1px solid var(--note-line); border-radius: 10px; padding: 12px 16px; margin: 24px 0; }
   ol { padding-left: 1.3em; } li { margin: 6px 0; }
@@ -43,26 +44,35 @@
   <h1>Talk to the SimuLearn child model</h1>
   <p class="lede">You play the teacher or caregiver. Two AI models answer each line you type: an ordinary AI, and our model trained on real conversations between children and adults. Tell us which one sounds more like a real child.</p>
 
+  <h2>1. Open the demo</h2>
+  <a class="cta" id="open-demo" href="https://simulearn-demo.arumos.dev" target="_blank" rel="noopener">Open the demo →</a>
   <div class="note">
-    <strong>Before you start, sign in to a free Hugging Face account.</strong> The demo runs on a free shared GPU that gives
-    each visitor a small daily allowance. Without an account you may only get a message or two per day; signed in, you get
-    more than twice as much.
+    <strong>This link works during scheduled test sessions.</strong> The demo runs on a team member's computer, which is
+    switched on for testing and off the rest of the time. If the link shows a Cloudflare error page (for example
+    "Error 1033" or "530"), the demo is off right now: use the backup below, or ask Justin Perkins when the next session is.
   </div>
-
-  <h2>1. Make a free Hugging Face account (one time, about 2 minutes)</h2>
   <ol>
-    <li>Go to <a href="https://huggingface.co/join" target="_blank" rel="noopener">huggingface.co/join</a>.</li>
+    <li>At the demo's login box, type <strong>any username</strong> (your name is fine) and the <strong>team password</strong> (ask Justin Perkins).</li>
+    <li>Each reply takes a few seconds. You don't need a Hugging Face account for this link.</li>
+  </ol>
+
+  <h2>2. If the link doesn't load: the backup demo on Hugging Face</h2>
+  <p>The same demo also runs on Hugging Face, on a free shared GPU. It's slower to start and gives each visitor a small daily allowance.</p>
+  <div class="note">
+    <strong>Sign in to a free Hugging Face account first.</strong> Without an account you may only get a message or two
+    per day; signed in, you get more than twice as much.
+  </div>
+  <ol>
+    <li>Go to <a href="https://huggingface.co/join" target="_blank" rel="noopener">huggingface.co/join</a> (one time, about 2 minutes).</li>
     <li>Enter your email and a password, then pick a username and full name. You can skip the optional profile fields.</li>
     <li>Open the confirmation email from Hugging Face and click the link to verify your address.</li>
     <li>Stay signed in to huggingface.co in the same browser you'll use for the demo.</li>
   </ol>
   <p>The account is free. You don't need a paid plan, a credit card, or any access tokens.</p>
-
-  <h2>2. Open the demo</h2>
-  <a class="cta" id="open-demo" href="https://huggingface.co/spaces/xArumos/simulearn-demo" target="_blank" rel="noopener">Open the demo →</a>
+  <a class="cta secondary" id="open-backup" href="https://huggingface.co/spaces/xArumos/simulearn-demo" target="_blank" rel="noopener">Open the backup demo →</a>
   <ol>
     <li>Use this button rather than a direct <code>hf.space</code> link: the Hugging Face page is what tells the demo you're signed in.</li>
-    <li>At the demo's login box, type <strong>any username</strong> (your name is fine) and the <strong>team password</strong> (ask Justin Perkins).</li>
+    <li>Log in the same way: any username and the team password.</li>
     <li>The first visit after a quiet spell can take a minute or two while the demo wakes up. After that, each reply takes a few seconds.</li>
     <li>If a reply fails with a message about GPU quota, you've used today's allowance. It resets 24 hours after your first message.</li>
   </ol>
