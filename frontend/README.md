@@ -29,3 +29,8 @@ Needs Node.js 26 (issue #56). In a non-interactive shell, load nvm first:
   components use the Tailwind names (`bg-surface`, `text-muted-foreground`, `bg-accent`...), never raw colours.
 - `src/lib/theme.tsx`: light/dark theme that follows the OS, with a manual override saved in the browser.
 - `src/pages/`: Login, Practice (#61), History (#62), Account (change password).
+- `src/components/chat/`: the practice chat (#61): conversation log, reply cards with pause chips and 👍/👎
+  feedback, the input box, scene picker and model-info panel. `src/lib/reply.ts` turns `<SILENCE FOR X SECONDS>`
+  into "(pauses X s)" chips and sets the "thinking…" wait (the pause length, at most 5 s).
+- `mock/mockApi.ts`: the fake API for tests and `MOCK_API=1`. It mirrors the routes, shapes and status codes of
+  `src/product/server.py` (sessions, turns, untrained replies, compare on/off, model info) with invented replies.

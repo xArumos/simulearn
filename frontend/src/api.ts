@@ -22,8 +22,12 @@ export interface Scenario {
 }
 
 export interface AppConfig {
+  /** Ages (in years) that have a trained model, sorted. */
   ages: number[];
-  age_labels?: Record<string, string>;
+  /** The config's label per age, keyed by the age as a string, e.g. {"5": "60-71 months"}. May be "". */
+  age_labels: Record<string, string>;
+  /** The age to start with; null only when no age has a model. */
+  default_age: number | null;
   scenarios: Scenario[];
   /** Whether conversations are stored (MongoDB configured on the server). */
   saving: boolean;
@@ -32,8 +36,12 @@ export interface AppConfig {
 
 export interface ModelInfo {
   base_model: string;
+  /** Adapter run name per age, keyed by the age as a string. */
   adapters: Record<string, string>;
-  decoding: Record<string, number | string>;
+  decoding: Record<string, number | string | boolean>;
+  /** How many earlier turns the model sees (trimmed like in training). */
+  context_turns: number;
+  load_in_4bit: boolean;
   device: string;
 }
 
@@ -44,12 +52,27 @@ export interface SessionCreated {
   compare: boolean;
 }
 
+/** PATCH /api/sessions/{id}: the session after switching compare on or off. */
+export interface SessionState extends SessionCreated {
+  /** The first turn the untrained model answers (since compare was last switched on); null = never on. */
+  compare_started_turn: number | null;
+}
+
 export interface TurnReply {
   turn: number;
+  /** The raw reply; may contain <SILENCE FOR X SECONDS> tags. */
   text: string;
+  /** The server's Markdown rendering for the Gradio demo. This app renders `text` itself (src/lib/reply.ts). */
   rendered: string;
+  /** Seconds of a leading silence tag (the child pauses before answering), else null. */
   pause_s: number | null;
+  /** Generation time in seconds. */
   secs: number;
+}
+
+/** POST /api/feedback answer (#59). `saved: false` means saving is off and nothing was stored. */
+export interface FeedbackResult {
+  saved?: boolean;
 }
 
 export interface SessionSummary {
@@ -143,10 +166,10 @@ export const api = {
   untrainedReply: (sessionId: string, turn: number) =>
     request<TurnReply>("POST", `/api/sessions/${encodeURIComponent(sessionId)}/turns/${turn}/untrained`),
   setCompare: (sessionId: string, compare: boolean) =>
-    request<unknown>("PATCH", `/api/sessions/${encodeURIComponent(sessionId)}`, { compare }),
+    request<SessionState>("PATCH", `/api/sessions/${encodeURIComponent(sessionId)}`, { compare }),
 
   // #59
-  feedback: (f: FeedbackIn) => request<unknown>("POST", "/api/feedback", f),
+  feedback: (f: FeedbackIn) => request<FeedbackResult | null>("POST", "/api/feedback", f),
   sessions: (limit = 50) => request<SessionSummary[]>("GET", `/api/sessions?limit=${limit}`),
   session: (sessionId: string) => request<unknown>("GET", `/api/sessions/${encodeURIComponent(sessionId)}`),
   exportUrl: (sessionId: string, format: "txt" | "json") =>
@@ -156,4 +179,5 @@ export const api = {
 export const queryKeys = {
   me: ["me"] as const,
   config: ["config"] as const,
+  modelInfo: ["model-info"] as const,
 };
