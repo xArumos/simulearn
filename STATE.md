@@ -1,6 +1,6 @@
 # STATE.md — live session handoff
 
-_Last updated: 2026-11-19 (session 7, synced after PRs #32, #33)_
+_Last updated: 2026-11-19 (session 7, synced after PRs #35, #37)_
 
 **Active work is tracked in GitHub Issues** (https://github.com/xArumos/simulearn/issues). This file is the handoff summary; `/sync-issues` keeps it current. Workflow: `CONTRIBUTING.md`, CLAUDE.md §14.
 
@@ -10,6 +10,8 @@ _Last updated: 2026-11-19 (session 7, synced after PRs #32, #33)_
 - External test passed (Justin, phone off Wi-Fi): 3 chats / 5 turns / 3 ratings saved. A friend tested earlier while Mongo was down, so nothing of theirs was saved. Get Dr. Dever's OK before saving chats from people outside the team.
 - PR #32 (#31): `DemoStore.rate()` stores `feedback.conversation_id` as ObjectId (was str, so ratings didn't join to chats); invalid ids logged + return False; 2 tests. One-off `mongosh` migration for old string-id rows is in the `src/demo/store.py` docstring (not yet run).
 - PR #33 (#30): `scripts/demo_up.sh [--no-db]` (checks units/DEMO_PASSWORD/docker, starts Mongo + tunnel + demo, waits for the port, prints URL(s) from the tunnel config and saving on/off) and `scripts/demo_down.sh [--keep-db]` (stops tunnel + demo by name, then Mongo, shows GPU memory). Shared checks moved to `scripts/_demo_env.sh` (sourced by `tunnel.sh`). README uses them; `enable` not recommended. 28 stub tests; 166 pass. Not yet run against the real services.
+- PR #35 (#17): GitHub Pages main button → https://simulearn-demo.arumos.dev (note: works during test sessions; a Cloudflare 530/1033 page means it's off), HF Space is the outlined "backup demo" button with its account steps. README: desktop demo first, HF Space under "Fallback: Hugging Face Space".
+- PR #37 (#36): missing-cloudflared test runs with a tools-only PATH (never runs a real `cloudflared`; runs instead of skipping on the desktop); header comments in `tunnel.sh`, `serve_demo.sh` and both systemd units describe the on-demand flow (`enable` not recommended). 169 pass.
 
 ## Session 6 (2026-11-18): issue-driven workflow
 - Added `CONTRIBUTING.md`, issue/PR templates, CI (`.github/workflows/tests.yml` + `requirements-ci.txt`, CPU-only; 75 tests pass in a fresh venv), workflow labels, and `.claude/` (agent `issue-worker`; skills `/plan-issues`, `/work-issue`, `/sync-issues`; project permissions). CLAUDE.md §14.
@@ -98,7 +100,7 @@ From Claude's Windows shell: write a .sh to the scratchpad, then run `wsl.exe -d
 ## Next planned actions
 Task list lives on GitHub; tracking issue #18.
 1. Track A (HiPerGator): #8-#12 done. Possible next: add the 7B adapter to the blind review packet (not yet an issue); age-4 adapter into the demo (upload needs Justin's OK).
-2. Track B (self-hosted demo): #13-#16 done, #30 (up/down scripts) and #31 (ratings ObjectId) done → **#17 Pages + README is next** (its dependency #30 is merged; relabel from `blocked`). Later: the product frontend on `simulearn.arumos.dev` (not yet issues; `tunnel.sh`'s port-7860 check will need updating).
+2. Track B (self-hosted demo): #13-#17, #30, #31, #36 all done; no open issues. Later: the product frontend on `simulearn.arumos.dev` (not yet issues; `tunnel.sh`'s port-7860 check will need updating).
 3. Still open, not yet issues: Phase 1 ratings → pick run 3 vs 4 (`python -m src.eval.score_ratings --phase phase1`), optional runs 5-6, Phase 1 report. Rebuild the meeting notebook after new results (`python scripts/build_meeting_notebook.py`).
 
 ## Waiting on user
@@ -111,7 +113,6 @@ Task list lives on GitHub; tracking issue #18.
 - Non-blocking: Dr. Dever to confirm Cameron (Eng-AAE). Ask Dante to delete the public `Dante7162-patch-1` branch (contains `Gleason.zip`).
 
 ## Known issues
-- `tests/test_tunnel.py::test_missing_cloudflared_points_at_the_readme` skips only when `cloudflared` is in `/usr/bin` or `/bin`; with an install elsewhere it would open a real quick tunnel. Robust fix: run it with a PATH that can't contain `cloudflared`.
 - Test split is small for some corpora: Cameron has 3 age-5 children (0 in val); Warren has 0 in test; MacWhinney (Ross + Mark, one group) is all in train. Fine for an aggregate evaluation, but per-corpus test numbers would be noisy.
 - Golden set is 28 (age5) / 24 (age4) instead of 30, because of the max-2-per-child rule with 14 test children.
 - A few targets are very long (max ~300 words, from merged child monologues). The collator drops examples over 512 tokens after trimming context.
