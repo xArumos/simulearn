@@ -1,0 +1,17 @@
+# Named Cloudflare Tunnel for the desktop demo (used by: bash scripts/tunnel.sh named).
+# Copy to scripts/cloudflared/config.yml (git-ignored) and replace the <...> placeholders. Steps: README.md,
+# "Share the demo with a Cloudflare Tunnel". Never commit the real file or the credentials .json.
+
+# The tunnel's ID (or name), printed by `cloudflared tunnel create simulearn-demo`.
+tunnel: <TUNNEL-ID>
+
+# Written by `cloudflared tunnel create`. It stays OUTSIDE the repo, in your home folder. Use the full path
+# (e.g. /home/<you>/.cloudflared/<TUNNEL-ID>.json); systemd does not expand ~.
+credentials-file: /home/<you>/.cloudflared/<TUNNEL-ID>.json
+
+ingress:
+  # Your hostname on a domain you manage in Cloudflare (set by `cloudflared tunnel route dns ...`).
+  - hostname: <demo.example.org>
+    service: http://127.0.0.1:7860
+  # Required catch-all: anything else gets a 404.
+  - service: http_status:404

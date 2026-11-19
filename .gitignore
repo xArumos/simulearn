@@ -50,3 +50,9 @@ build/
 scripts/slurm/hpg.env
 experiments/*/slurm-*.out
 # --- end HiPerGator ---
+
+# --- Cloudflare Tunnel (issue #15) ---
+# Real tunnel config and credentials stay on the machine; commit only scripts/cloudflared/config.yml.example
+scripts/cloudflared/*
+!scripts/cloudflared/config.yml.example
+# --- end Cloudflare Tunnel ---

@@ -54,6 +54,48 @@ Optional settings: `DEMO_PORT`, `DEMO_HOST`, `DEMO_DEVICE` (`auto`/`cpu`/`cuda`)
 
 **Limits:** the demo is only up while the PC is on and WSL is running. WSL stops when Windows sleeps or shuts down, and may stop the Ubuntu VM when no WSL window is open, so disable sleep on the desktop and keep a WSL terminal open while testers need it. The Hugging Face Space (below) stays as the fallback.
 
+### Share the demo with a Cloudflare Tunnel (issue #15)
+
+A Cloudflare Tunnel gives testers an `https://` link to the desktop demo without opening router ports: the `cloudflared` program on the desktop makes an outgoing connection to Cloudflare, and Cloudflare forwards visitors through it to `127.0.0.1:7860`. It's free. Anyone with the link reaches the password page, so `bash scripts/tunnel.sh` **refuses to start if `DEMO_PASSWORD` is empty** (shell first, then `.env`) or if nothing is listening on `127.0.0.1:7860` (start the demo first).
+
+There are two modes:
+- **Quick** (`bash scripts/tunnel.sh`): no Cloudflare account. Prints a random `https://<words>.trycloudflare.com` URL that **changes every time the tunnel restarts**. Good for a meeting or a test session.
+- **Named** (`bash scripts/tunnel.sh named`): a fixed hostname such as `demo.<your-domain>`. Needs a free Cloudflare account and a domain whose DNS is on Cloudflare.
+
+**Install `cloudflared` (one time, inside WSL, done by you).** It is a system program, not a Python package, so it goes outside the venv. Use Cloudflare's apt repository (check the current steps at developers.cloudflare.com → Cloudflare Tunnel → Downloads):
+```bash
+sudo mkdir -p --mode=0755 /usr/share/keyrings
+curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
+echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main' | sudo tee /etc/apt/sources.list.d/cloudflared.list
+sudo apt-get update && sudo apt-get install cloudflared
+cloudflared --version
+```
+(Or download `cloudflared-linux-amd64.deb` from the GitHub releases page of `cloudflare/cloudflared` and `sudo dpkg -i` it.) `apt upgrade` keeps it current; the script passes `--no-autoupdate`.
+
+**Quick mode:**
+1. Make sure the demo runs with a password (`systemctl --user status simulearn-demo`, or `bash scripts/serve_demo.sh` in another terminal).
+2. `bash scripts/tunnel.sh`. After a few seconds `cloudflared` prints a box with `https://<words>.trycloudflare.com`. Open it, log in with any username and `DEMO_PASSWORD`, and send that link to testers. Ctrl+C closes the tunnel.
+
+**Named mode (one-time setup, done by you; Claude never handles Cloudflare logins or credentials):**
+1. Create a free account at dash.cloudflare.com and add a domain you own (its DNS must be managed by Cloudflare).
+2. `cloudflared tunnel login`: opens a browser, you pick the domain. It saves `~/.cloudflared/cert.pem` (outside the repo).
+3. `cloudflared tunnel create simulearn-demo`: prints the tunnel ID and writes `~/.cloudflared/<TUNNEL-ID>.json`. This file is the tunnel's password; never copy it into the repo or a chat.
+4. `cloudflared tunnel route dns simulearn-demo demo.<your-domain>`.
+5. `cp scripts/cloudflared/config.yml.example scripts/cloudflared/config.yml` and fill in the tunnel ID, the full path of the `.json` file and the hostname. `scripts/cloudflared/` is git-ignored except the example.
+6. `bash scripts/tunnel.sh named`, then open `https://demo.<your-domain>`.
+
+**Always on (optional, after the demo service above works):**
+```bash
+cp scripts/systemd/simulearn-tunnel.service ~/.config/systemd/user/
+# named mode: edit ExecStart in the copied file to end in "tunnel.sh named"
+systemctl --user daemon-reload
+systemctl --user enable --now simulearn-tunnel
+journalctl --user -u simulearn-tunnel | grep trycloudflare   # quick mode: today's URL
+```
+The tunnel unit starts the demo unit too and waits up to 10 minutes for it to listen. `systemctl --user stop simulearn-tunnel` takes the demo off the internet but keeps it running locally; `disable --now` turns it off for good. Quick mode URLs change after every restart (including a PC reboot), so re-check the journal and resend the link, or use named mode.
+
+Settings: `DEMO_PORT` (default 7860; in named mode also change `service:` in `config.yml`), `TUNNEL_CONFIG` (default `scripts/cloudflared/config.yml`), `TUNNEL_WAIT_SECONDS` (default 0 by hand, 600 in the unit).
+
 **Hosted (one-time setup, done by you; never paste tokens or passwords into a chat or into git):**
 1. Dr. Dever's OK: done 2026-11-03 (DECISIONS.md D9).
 2. **Hugging Face:** create an account, then in WSL run `hf auth login`.
