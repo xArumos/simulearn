@@ -145,7 +145,7 @@ Use this when the desktop demo is off. It runs the same demo on a free ZeroGPU S
 <!-- BEGIN HiPerGator section (issue #9) -->
 ## Training on HiPerGator
 
-> **Before running anything on HiPerGator, read `POLICIES.md`.** UF prohibits LLMs from countries of concern on HiPerGator, **Qwen included**, and that covers fine-tunes and LoRA adapters too. The chain below uses only Meta's Llama models (`DECISIONS.md` D11). The Qwen and SmolLM2 configs still in `configs/hpg/` are the record of past runs: they are not in the chain, `--only` refuses them, and the Qwen ones must never be submitted by hand. UF also prohibits leaving an allocated GPU idle.
+> **Before running anything on HiPerGator, read `POLICIES.md`.** UF prohibits LLMs from countries of concern on HiPerGator, **Qwen included**, and that covers fine-tunes and LoRA adapters too. The chain below uses only Meta's Llama models (`DECISIONS.md` D11). The Qwen and SmolLM2 configs still in `configs/hpg/` are the record of past runs: they are not in the chain, `--only` refuses them, and the Qwen ones must never be submitted by hand. `submit_all.sh` and the model loaders refuse any prohibited model or adapter (`src/utils/model_policy.py`, see `POLICIES.md`). UF also prohibits leaving an allocated GPU idle.
 
 HiPerGator is UF's computing cluster. You don't run jobs on it directly: you log in to a *login node*, then hand jobs to **SLURM**, the queue system, which runs them on a GPU node when one is free. These scripts queue the whole D11 run chain (baselines, fine-tuning and evaluation for three Llama models on both age buckets) with one command. The Python code is the same as on the local PC; only `scripts/env_hpg.sh` and `scripts/slurm/` are HiPerGator-specific.
 
