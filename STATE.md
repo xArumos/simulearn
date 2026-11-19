@@ -1,6 +1,6 @@
 # STATE.md — live session handoff
 
-_Last updated: 2026-11-19 (session 7, synced after PRs #66, #67, #68)_
+_Last updated: 2026-11-19 (session 7, synced after PRs #70, #71, #72, #75)_
 
 **Active work is tracked in GitHub Issues** (https://github.com/xArumos/simulearn/issues). This file is the handoff summary; `/sync-issues` keeps it current. Workflow: `CONTRIBUTING.md`, CLAUDE.md §14.
 
@@ -26,6 +26,11 @@ _Last updated: 2026-11-19 (session 7, synced after PRs #66, #67, #68)_
 - PR #66 (#54): model code moved to Gradio-free `src/demo/engine.py`; `chat_demo.py` re-exports it. Fixed the Space allowlist (`engine.py`, plus `chat_template.py` and `model_policy.py`, which were missing, so a built Space couldn't import the demo).
 - PR #67 (#55): `src/product/auth.py`: argon2 password hashes, sha256-hashed session tokens, httpOnly/Secure/SameSite=Lax cookie (7 days), the same 401 for unknown user, wrong password and disabled account, and a rate limit (5 failures / 10 min per IP or username). Routes `/api/auth/login|logout`, `/api/me`, `/api/me/password`; mount with `app.state.auth = Auth(db); app.include_router(router)`. `scripts/create_user.py` (create/disable/enable/reset/list, password via getpass only). `argon2-cffi==25.1.0` pinned. 260 tests pass.
 - PR #68 (#60): `frontend/`: React 19 + Vite 8 + TS, Tailwind 4 tokens, light/dark, Radix UI components, self-hosted Inter. Login, app shell, account page; Practice/History are placeholders (#61/#62). Typed API client `frontend/src/api.ts`. `MOCK_API=1 npm run dev` gives a fake API (`demo` / `practice-only`, mock only). `scripts/build_frontend.sh`; CI frontend job on Node 26 (typecheck, vitest, build, `check:dist` that refuses external hosts). Not yet checked: login against the real #55 routes, and phone width / both themes by eye.
+- Accounts `justin` and `admin` created (both admin). Real `scripts/cloudflared/config.yml` now has `simulearn.arumos.dev → 127.0.0.1:8000` (cloudflared `ingress validate` OK); new product unit + changed tunnel unit installed in `~/.config/systemd/user/`.
+- PR #70 (#58): `src/product/server.py` (config, model-info, sessions, child turn, separate untrained turn, PATCH compare; serves `frontend/dist` with SPA fallback; CLI `python -m src.product.server --host 127.0.0.1 --port 8000 --device ...`), `src/product/sessions.py` (`practice_sessions` collection, or memory when saving is off; untrained history starts at `compare_started_turn`), `configs/scenarios.yaml` (7 invented scenes). The login rate limit trusts `CF-Connecting-IP` only from 127.0.0.1/::1. The server **needs MongoDB** (accounts); `SIMULEARN_SAVE_CHATS=0` = saving off; `SIMULEARN_COOKIE_SECURE=0` for local http only.
+- PR #71 (#61): practice view: age picker, compare switch (off by default; untrained called only after the child and only while on), scene picker, pause chips + thinking delay (max 5 s), 👍/👎 + note, model info sheet, toasts. `api.ts` + mock match #70. 45 frontend tests.
+- PR #72 (#63): `serve_product.sh` (refuses without `frontend/dist`, with the demo running, or with no active admin via `create_user.py has-admin`), `product_up.sh [--no-save]` / `product_down.sh [--keep-db]`, `simulearn-product.service`; `tunnel.sh` checks every ingress port and only warns when one app is down; the tunnel unit no longer pulls in the demo; `demo_up.sh` refuses while the product runs. README "Run the product", DECISIONS D12.
+- PR #75 (#46, other session): demo (and so the product) now on `meta-llama/Llama-3.2-3B-Instruct` bf16 with the HiPerGator age-4/age-5 3B adapters; selftest peak VRAM 6.20 GiB, 0.2-0.4 s per fine-tuned reply. Verified after merge: guard passes for base + both adapters, 328 Python tests and 45 frontend tests pass, build + `check:dist` OK. PR #76 (open) sets the age labels back to plain month ranges (the model name ended up inside "5 years (...)").
 
 ## Session 6 (2026-11-18): issue-driven workflow
 - Added `CONTRIBUTING.md`, issue/PR templates, CI (`.github/workflows/tests.yml` + `requirements-ci.txt`, CPU-only; 75 tests pass in a fresh venv), workflow labels, and `.claude/` (agent `issue-worker`; skills `/plan-issues`, `/work-issue`, `/sync-issues`; project permissions). CLAUDE.md §14.
@@ -116,16 +121,15 @@ Task list lives on GitHub; tracking issues #49 (Llama switch) and #18 (done).
 0. **Llama switch (#49):** #41, #42, #45 done → #43 run the chain on HiPerGator (Justin: `git pull`, `submit_all.sh --dry-run`, `--smoke-only`, then full) → #44 collect results + pick demo model + new review packet → #46 demo switch (measure 4-bit VRAM) and #47 docs → #48 Space / HF adapter repo / paper (Justin + Dr. Dever). #40 open for the Research Computing ticket.
 1. Track A (HiPerGator, Qwen era): #8-#12 done; superseded by the Llama switch.
 2. Track B (self-hosted demo): #13-#17, #30, #31, #36 all done.
-2b. **Product frontend (#65):** #54, #55, #56, #60 done → **#58** product API (ready now) → #59 feedback/history/export, #61 practice view, #63 serving + tunnel → #62 history view → #64 live test (Justin). #58 has notes on its issue: take the client IP from `CF-Connecting-IP` for the rate limit, and match the types in `frontend/src/api.ts`.
+2b. **Product frontend (#65):** #54-#56, #58, #60, #61, #63 done → **#59** feedback/history/export API (ready; frontend expects `{ok, saved}` from `/api/feedback`, see its comment) → #62 history view → #64 live test (Justin, can start now).
 3. Still open, not yet issues: Phase 1 ratings → pick run 3 vs 4 (`python -m src.eval.score_ratings --phase phase1`), optional runs 5-6, Phase 1 report. Rebuild the meeting notebook after new results (`python scripts/build_meeting_notebook.py`).
 
 ## Waiting on user
 - First real run of `bash scripts/demo_up.sh` / `demo_down.sh` on the desktop (only stub-tested so far).
 - Optional: run the `mongosh` migration in the `src/demo/store.py` docstring so the 3 old ratings join to their chats.
 - Run `scripts/db_backup.sh` once to verify backups for real (#13 follow-up; Docker + Mongo are now up).
-- Create your product admin account: `python scripts/create_user.py create --role admin` (needs Mongo up). Then check the frontend login against the real routes (#60 follow-up).
 - **#57:** ask Dr. Dever whether educators outside the team may use the product and whether their chats may be saved (IRB).
-- **#64 (later):** add the `simulearn.arumos.dev` ingress to the real `config.yml` and run the live test, once #61 and #63 are merged (the DNS route is already done).
+- **#64:** first real run of the product: merge #76, `bash scripts/build_frontend.sh`, `bash scripts/product_up.sh`, log in at https://simulearn.arumos.dev from a phone off Wi-Fi, run a session with compare off and on, `bash scripts/product_down.sh`. This also checks the frontend login against the real routes (#60 follow-up). DNS route, ingress, units and accounts are done.
 - **#43:** run the Llama chain on HiPerGator (smoke first).
 - **#40:** report the Qwen cleanup in a UF Research Computing ticket (attach the removal list).
 - **#48 (later):** with Dr. Dever: Qwen files on the desktop / HF adapter repo, the public Space, and the summit paper (names Qwen).
@@ -139,4 +143,4 @@ Task list lives on GitHub; tracking issues #49 (Llama switch) and #18 (done).
 - A few targets are very long (max ~300 words, from merged child monologues). The collator drops examples over 512 tokens after trimming context.
 - WSL2 gets ~15 GB RAM by default, which may be tight for Phase 2 (7B).
 - Desktop apps use ~1.2 GB VRAM. Close them before training.
-- `test_backup_script_explains_missing_mongodump` fails on the desktop, because it assumes `mongodump` isn't installed, and it is there. It passes in CI. The test should hide `mongodump` from PATH, as the cloudflared test does.
+- `test_backup_script_explains_missing_mongodump` fails on the desktop **and runs a real mongodump** into pytest's tmp folder (`/tmp/pytest-of-justin`); deselect it locally until fixed, because it assumes `mongodump` isn't installed, and it is there. It passes in CI. The test should hide `mongodump` from PATH, as the cloudflared test does.
