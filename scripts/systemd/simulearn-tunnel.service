@@ -1,6 +1,8 @@
-# systemd USER service: Cloudflare Tunnel in front of the always-on demo (simulearn-demo.service). Optional.
-# Install steps: README.md, "Share the demo with a Cloudflare Tunnel". Edit the two repo paths below if the repo is
-# not at ~/dev/simulearn.
+# systemd USER service: Cloudflare Tunnel in front of the demo (simulearn-demo.service), run on demand. Optional.
+# Install it once (README.md, "Share the demo with a Cloudflare Tunnel"), then start and stop it with
+# scripts/demo_up.sh and scripts/demo_down.sh, which also handle the demo unit. "systemctl --user enable" is
+# optional and not recommended: starting at boot keeps the model in GPU memory.
+# Edit the two repo paths below if the repo is not at ~/dev/simulearn.
 # Quick mode (the default here) gets a NEW https://...trycloudflare.com URL on every restart; read it with
 #   journalctl --user -u simulearn-tunnel | grep trycloudflare
 # For a fixed hostname, set up a named tunnel and change ExecStart to end in "tunnel.sh named".
