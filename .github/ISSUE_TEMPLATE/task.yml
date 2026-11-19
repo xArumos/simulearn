@@ -61,3 +61,5 @@ body:
       options:
         - label: This issue contains no CHILDES text, tokens or passwords.
           required: true
+        - label: Any model this issue uses is not from a country of concern (no Qwen, DeepSeek, etc.; see POLICIES.md).
+          required: true

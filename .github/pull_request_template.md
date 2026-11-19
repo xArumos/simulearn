@@ -9,5 +9,6 @@ Closes #
 
 ## Checklist
 - [ ] No CHILDES text, data files, adapters, tokens or passwords in the diff or this description
+- [ ] No model from a country of concern (Qwen, DeepSeek, ...) added or run; see `POLICIES.md`
 - [ ] YELLOW change? Entry added to `DECISIONS.md`
 - [ ] Experiment run? Entry added to `experiments/EXPERIMENT_LOG.md`
