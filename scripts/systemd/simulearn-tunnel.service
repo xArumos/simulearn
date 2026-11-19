@@ -1,17 +1,20 @@
-# systemd USER service: Cloudflare Tunnel in front of the demo (simulearn-demo.service), run on demand. Optional.
+# systemd USER service: Cloudflare Tunnel in front of the desktop apps (simulearn-demo.service and/or
+# simulearn-product.service), run on demand. Optional.
 # Install it once (README.md, "Share the demo with a Cloudflare Tunnel"), then start and stop it with
-# scripts/demo_up.sh and scripts/demo_down.sh, which also handle the demo unit. "systemctl --user enable" is
-# optional and not recommended: starting at boot keeps the model in GPU memory.
+# scripts/demo_up.sh / scripts/demo_down.sh or scripts/product_up.sh / scripts/product_down.sh, which also handle
+# the app's unit. It does NOT pull in an app itself (no Wants=), so starting it for the product never loads the
+# demo too. "systemctl --user enable" is optional and not recommended: starting at boot keeps a model in GPU memory.
 # Edit the two repo paths below if the repo is not at ~/dev/simulearn.
-# Quick mode (the default here) gets a NEW https://...trycloudflare.com URL on every restart; read it with
+# Quick mode (the default here) reaches the demo only, and gets a NEW https://...trycloudflare.com URL on every
+# restart; read it with
 #   journalctl --user -u simulearn-tunnel | grep trycloudflare
-# For a fixed hostname, set up a named tunnel and change ExecStart to end in "tunnel.sh named".
+# For fixed hostnames (and for the product), set up a named tunnel and change ExecStart to end in "tunnel.sh named".
 # No secrets here: tunnel.sh checks DEMO_PASSWORD in the repo's .env; named-tunnel credentials stay in ~/.cloudflared.
 
 [Unit]
-Description=SimuLearn demo Cloudflare Tunnel (to 127.0.0.1:7860)
-Wants=simulearn-demo.service network-online.target
-After=simulearn-demo.service network-online.target
+Description=SimuLearn Cloudflare Tunnel (to the demo on 127.0.0.1:7860 and the product on 127.0.0.1:8000)
+Wants=network-online.target
+After=simulearn-demo.service simulearn-product.service network-online.target
 # Give up after 5 failed starts in 10 minutes (e.g. DEMO_PASSWORD missing) instead of looping forever.
 StartLimitIntervalSec=600
 StartLimitBurst=5
@@ -20,7 +23,7 @@ StartLimitBurst=5
 Type=simple
 WorkingDirectory=%h/dev/simulearn
 ExecStart=/bin/bash %h/dev/simulearn/scripts/tunnel.sh quick
-# The demo needs a while to load the model; wait for it to listen instead of failing straight away.
+# An app needs a while to load the model; wait for it to listen instead of failing straight away.
 Environment=TUNNEL_WAIT_SECONDS=600
 Restart=on-failure
 RestartSec=15

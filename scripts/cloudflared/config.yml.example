@@ -1,6 +1,8 @@
-# Named Cloudflare Tunnel for the desktop demo (used by: bash scripts/tunnel.sh named).
+# Named Cloudflare Tunnel for the desktop apps (used by: bash scripts/tunnel.sh named). One tunnel, two hostnames:
+# the Gradio demo and the educator product. Each runs on demand; tunnel.sh warns (does not refuse) when one of them
+# is down, so either can run alone.
 # Copy to scripts/cloudflared/config.yml (git-ignored) and replace the <...> placeholders. Steps: README.md,
-# "Share the demo with a Cloudflare Tunnel". Never commit the real file or the credentials .json.
+# "Share the demo with a Cloudflare Tunnel" and "Run the product". Never commit the real file or the credentials .json.
 
 # The tunnel's ID (or name), printed by `cloudflared tunnel create simulearn-demo`.
 tunnel: <TUNNEL-ID>
@@ -10,8 +12,11 @@ tunnel: <TUNNEL-ID>
 credentials-file: /home/<you>/.cloudflared/<TUNNEL-ID>.json
 
 ingress:
-  # Your hostname on a domain you manage in Cloudflare (set by `cloudflared tunnel route dns ...`).
+  # The Gradio demo (scripts/serve_demo.sh). Hostname set by `cloudflared tunnel route dns <tunnel> <hostname>`.
   - hostname: <demo.example.org>
     service: http://127.0.0.1:7860
-  # Required catch-all: anything else gets a 404.
+  # The educator product (scripts/serve_product.sh), on its own hostname of the same tunnel.
+  - hostname: <app.example.org>
+    service: http://127.0.0.1:8000
+  # Required catch-all, always last: anything else gets a 404.
   - service: http_status:404
