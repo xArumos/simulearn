@@ -8,7 +8,11 @@ Data: CHILDES (MacWhinney, B. (2000). *The CHILDES Project: Tools for Analyzing 
 
 ## Team demo in the browser
 
-The side-by-side chat demo (untrained Qwen vs our fine-tuned child model, one adapter per age) is `src/demo/chat_demo.py`. It runs locally, or hosted on a free Hugging Face Space for advisors. GitHub Pages (`docs/index.html`) is only the landing page with instructions. It can't run a model, so it links to the Space.
+The side-by-side chat demo (untrained Qwen vs our fine-tuned child model, one adapter per age) is `src/demo/chat_demo.py`. Testers reach it in this order:
+1. **Desktop demo (main path):** the demo runs on Justin's PC during test sessions and is shared at https://simulearn-demo.arumos.dev through a named Cloudflare Tunnel, behind the demo password. It is **on demand**: started with `bash scripts/demo_up.sh` and stopped with `bash scripts/demo_down.sh`, so the model doesn't hold GPU memory between sessions. While it's off, the URL shows a Cloudflare "tunnel offline" error (HTTP 530).
+2. **Hugging Face Space (fallback):** the same demo on a free ZeroGPU Space, for when the desktop demo is off. See "Fallback: Hugging Face Space" below.
+
+GitHub Pages (`docs/index.html`) is only the landing page with instructions. It can't run a model, so it links to the desktop demo first and to the Space as the backup.
 
 **Locally (GPU, inside WSL):** `bash scripts/demo.sh`, then open http://localhost:7860. Optional environment variables:
 - `MONGODB_URI` saves chats and ratings (local MongoDB: see "Local MongoDB" below; `.env` is read automatically).
@@ -16,7 +20,7 @@ The side-by-side chat demo (untrained Qwen vs our fine-tuned child model, one ad
 
 Without them, nothing is saved and there is no password. Stop the demo before training, because both together don't fit in 12 GB VRAM.
 
-### Always-on demo on the desktop (main way to try the model, DECISIONS.md D10)
+### Desktop demo (main way to try the model, DECISIONS.md D10)
 
 `bash scripts/serve_demo.sh` runs the same demo as a service:
 - reads `.env` (see "Local MongoDB" below) and **refuses to start if `DEMO_PASSWORD` is empty**;
@@ -52,7 +56,7 @@ Optional settings: `DEMO_PORT`, `DEMO_HOST`, `DEMO_DEVICE` (`auto`/`cpu`/`cuda`)
 - `systemctl --user disable --now simulearn-demo` to turn it off for good; `rm ~/.config/systemd/user/simulearn-demo.service` to remove it.
 - It restarts by itself after a crash (`Restart=on-failure`), but gives up after 5 failed starts in 10 minutes (for example a missing password). Fix the cause, then `systemctl --user reset-failed simulearn-demo` and `start` it.
 
-**Limits:** the demo is only up while the PC is on and WSL is running. WSL stops when Windows sleeps or shuts down, and may stop the Ubuntu VM when no WSL window is open, so disable sleep on the desktop and keep a WSL terminal open while testers need it. The Hugging Face Space (below) stays as the fallback.
+**Limits:** the demo is only up while the PC is on and WSL is running. WSL stops when Windows sleeps or shuts down, and may stop the Ubuntu VM when no WSL window is open, so disable sleep on the desktop and keep a WSL terminal open during a test session. When the desktop demo is off, testers use the Hugging Face Space (see "Fallback: Hugging Face Space" below).
 
 ### Share the demo with a Cloudflare Tunnel (issue #15)
 
@@ -107,7 +111,11 @@ bash scripts/demo_down.sh    # after the session: frees the GPU
 
 Settings: `DEMO_PORT`, `TUNNEL_CONFIG`, `DEMO_UP_WAIT_SECONDS` (wait for the demo to listen, default 600), `DEMO_UP_TUNNEL_WAIT_SECONDS` (wait for the tunnel unit, the quick URL and the saving line, default 30).
 
-**Hosted (one-time setup, done by you; never paste tokens or passwords into a chat or into git):**
+### Fallback: Hugging Face Space
+
+Use this when the desktop demo is off. It runs the same demo on a free ZeroGPU Space (slower first load, a daily GPU quota per visitor, see "ZeroGPU limits" below), with chats saved to MongoDB Atlas instead of the local MongoDB.
+
+**One-time setup, done by you; never paste tokens or passwords into a chat or into git:**
 1. Dr. Dever's OK: done 2026-11-03 (DECISIONS.md D9).
 2. **Hugging Face:** create an account, then in WSL run `hf auth login`.
 3. **Adapters:** run `bash scripts/upload_adapters.sh <hf-user>/simulearn-adapters`. This creates a **private** model repo with `age4/`, `age5/`, … and uploads only the adapter files.
@@ -123,7 +131,8 @@ Settings: `DEMO_PORT`, `TUNNEL_CONFIG`, `DEMO_UP_WAIT_SECONDS` (wait for the dem
    - Copy the `mongodb+srv://…` connection string into the `MONGODB_URI` secret.
 7. **Deploy:** run `bash scripts/deploy_space.sh <hf-user>/simulearn-demo`. Re-run it after any change to the demo code. Add `--dry-run` to only build `build/space/` and see the file list.
 8. **GitHub Pages** (done; live at https://xarumos.github.io/simulearn/, served from `main` `/docs`):
-   - The demo link in `docs/index.html` points at `https://huggingface.co/spaces/<hf-user>/simulearn-demo` (not the `hf.space` address, so visitors' HF login counts for their ZeroGPU quota).
+   - The main button in `docs/index.html` points at the desktop demo (https://simulearn-demo.arumos.dev) and says it works during test sessions.
+   - The backup button points at `https://huggingface.co/spaces/<hf-user>/simulearn-demo` (not the `hf.space` address, so visitors' HF login counts for their ZeroGPU quota), with the HF account steps.
    - Settings → Pages: "Deploy from a branch", `main`, `/docs`. Changes to `docs/index.html` go live once merged to `main`.
 
 **What gets saved (MongoDB, database `simulearn`):**
