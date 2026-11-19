@@ -1,12 +1,15 @@
 # STATE.md — live session handoff
 
-_Last updated: 2026-11-18 (session 6, synced after PRs #20, #21)_
+_Last updated: 2026-11-18 (session 6, synced after PRs #22, #23, #24)_
 
 **Active work is tracked in GitHub Issues** (https://github.com/xArumos/simulearn/issues). This file is the handoff summary; `/sync-issues` keeps it current. Workflow: `CONTRIBUTING.md`, CLAUDE.md §14.
 
 ## Session 6 (2026-11-18): issue-driven workflow
 - Added `CONTRIBUTING.md`, issue/PR templates, CI (`.github/workflows/tests.yml` + `requirements-ci.txt`, CPU-only; 75 tests pass in a fresh venv), workflow labels, and `.claude/` (agent `issue-worker`; skills `/plan-issues`, `/work-issue`, `/sync-issues`; project permissions). CLAUDE.md §14.
-- PR #20 (#9): HiPerGator SLURM. `scripts/env_hpg.sh`, `scripts/slurm/{train,evaluate}.sbatch`, `submit_all.sh` (smoke → Phase 0/1/2 chain, `--dry-run`/`--smoke-only`), settings in git-ignored `scripts/slurm/hpg.env` (placeholders in `.example` until #8). New `configs/hpg/phase1/qwen1.5b_lora_smoke_hpg.yaml`. Not yet run on HiPerGator.
+- PR #20 (#9): HiPerGator SLURM. `scripts/env_hpg.sh`, `scripts/slurm/{train,evaluate}.sbatch`, `submit_all.sh` (smoke → Phase 0/1/2 chain, `--dry-run`/`--smoke-only`), settings in git-ignored `scripts/slurm/hpg.env` (placeholders in `.example` until #8). New `configs/hpg/phase1/qwen1.5b_lora_smoke_hpg.yaml`.
+- #8 done (closed): HiPerGator set up (account/QOS `ddever`, partition `hpg-rtx6000`, RTX PRO 6000 96 GB, repo+venv+hf_cache+data under `/blue/ddever/<user>`); Dr. Dever approved CHILDES data on HiPerGator (verbal, team meeting). Smoke jobs all COMPLETED (1.5B LoRA val loss 2.447, 6.7 GB; 7B QLoRA 2.384, 12.9 GB; repro identical). **Full chain submitted, stamp `20261118-2027`** (#11).
+- PR #23 (#10): `configs/hpg/phase3/qwen1.5b_lora_ep1_age4_hpg.yaml` (run-3 recipe on age4), added to `submit_all.sh` after smoke; new `--only <run_name>` flag queues one config's train+eval alone (age-4 was not in the running chain).
+- PR #24 (#14): `scripts/serve_demo.sh` (127.0.0.1:7860, cuda if visible else cpu, needs `DEMO_PASSWORD`, starts with saving OFF if Mongo down), `scripts/systemd/simulearn-demo.service` (user unit, restart-on-failure), `chat_demo.py` `--host/--device/--require-password`, DECISIONS D10, README steps. GPU selftest 0.2-0.3 s/reply, 3 GB VRAM. 107 tests pass.
 - PR #21 (#13): local MongoDB. `docker-compose.yml` (Mongo 7 on 127.0.0.1:27017, named volume), `.env.example`, `backend/app/env.py` loads `.env` for demo + backend, `scripts/db_backup.sh` (backups to `~/simulearn-backups`), README "Local MongoDB". Backup only tested with a stand-in `mongodump`; Docker not installed on the desktop yet.
 - Merged as PR #7. Planned as issues #8-#18 (tracking issue #18). **Change of plans:** training moves to HiPerGator (Track A, first), and the demo + MongoDB move from the HF Space/Atlas to Justin's desktop behind a Cloudflare Tunnel, with the Space kept as a fallback (Track B).
 
@@ -82,13 +85,13 @@ From Claude's Windows shell: write a .sh to the scratchpad, then run `wsl.exe -d
 
 ## Next planned actions
 Task list lives on GitHub; tracking issue #18.
-1. Track A (HiPerGator, do first): #9 done (PR #20) → #10 age-4 config (agent-ready) → #11 submit runs (Justin; needs #8, #9, #10) → #12 collect results.
-2. Track B (self-hosted demo): #13 done (PR #21) → #14 demo service (agent-ready) + D10 → #15 tunnel scripts → #16 Cloudflare + external test (Justin) → #17 Pages + README.
+1. Track A (HiPerGator, do first): #8, #9, #10 done → #11 chain `20261118-2027` running; queue age-4 with `submit_all.sh --only qwen1.5b_lora_ep1_age4_hpg --stamp 20261118-2027` (Justin) → #12 collect results (rsync back without `checkpoints/`).
+2. Track B (self-hosted demo): #13, #14 done → install the demo service (Justin) → #15 tunnel scripts → #16 Cloudflare + external test (Justin) → #17 Pages + README.
 3. Still open, not yet issues: Phase 1 ratings → pick run 3 vs 4 (`python -m src.eval.score_ratings --phase phase1`), optional runs 5-6, Phase 1 report. Rebuild the meeting notebook after new results (`python scripts/build_meeting_notebook.py`).
 
 ## Waiting on user
-- **#8 HiPerGator one-time setup** (blocks #11): log in, clone, build venv, copy `data/processed*/` to `/blue`, Dr. Dever OK for CHILDES data on HiPerGator, then comment account / QOS / partition / GPU type on the issue.
-- **#11** submit smoke jobs, then the full chain (after #8, #10; #9 done).
+- **#11** on HiPerGator: `git pull`, then queue age-4 via `--only` (above); watch the `20261118-2027` chain, then rsync results back for #12.
+- **Demo service (#14 follow-up):** `systemd=true` in `/etc/wsl.conf` + `wsl --shutdown`, set `DEMO_PASSWORD` in `.env`, copy unit to `~/.config/systemd/user`, enable it, `loginctl enable-linger` (README).
 - Install Docker in WSL, `docker compose up -d`, then run `scripts/db_backup.sh` once to verify backups for real (#13 follow-up).
 - **#16** Cloudflare account + tunnel on the desktop, external test (after #14, #15).
 - **Blind ratings:** fill in `reports/phase1/review_ratings.csv` (28 items x 4 replies; 1-5 child-likeness, coherence, age-appropriateness). Each teammate can rate their own copy. Don't open `review_key.json` until done. Local only, git-ignored (CHILDES text).
