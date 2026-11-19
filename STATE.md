@@ -1,6 +1,6 @@
 # STATE.md — live session handoff
 
-_Last updated: 2026-11-19 (session 7, synced after PRs #70, #71, #72, #75)_
+_Last updated: 2026-11-19 (session 7, synced after PRs #76, #78, #79, #80)_
 
 **Active work is tracked in GitHub Issues** (https://github.com/xArumos/simulearn/issues). This file is the handoff summary; `/sync-issues` keeps it current. Workflow: `CONTRIBUTING.md`, CLAUDE.md §14.
 
@@ -30,7 +30,10 @@ _Last updated: 2026-11-19 (session 7, synced after PRs #70, #71, #72, #75)_
 - PR #70 (#58): `src/product/server.py` (config, model-info, sessions, child turn, separate untrained turn, PATCH compare; serves `frontend/dist` with SPA fallback; CLI `python -m src.product.server --host 127.0.0.1 --port 8000 --device ...`), `src/product/sessions.py` (`practice_sessions` collection, or memory when saving is off; untrained history starts at `compare_started_turn`), `configs/scenarios.yaml` (7 invented scenes). The login rate limit trusts `CF-Connecting-IP` only from 127.0.0.1/::1. The server **needs MongoDB** (accounts); `SIMULEARN_SAVE_CHATS=0` = saving off; `SIMULEARN_COOKIE_SECURE=0` for local http only.
 - PR #71 (#61): practice view: age picker, compare switch (off by default; untrained called only after the child and only while on), scene picker, pause chips + thinking delay (max 5 s), 👍/👎 + note, model info sheet, toasts. `api.ts` + mock match #70. 45 frontend tests.
 - PR #72 (#63): `serve_product.sh` (refuses without `frontend/dist`, with the demo running, or with no active admin via `create_user.py has-admin`), `product_up.sh [--no-save]` / `product_down.sh [--keep-db]`, `simulearn-product.service`; `tunnel.sh` checks every ingress port and only warns when one app is down; the tunnel unit no longer pulls in the demo; `demo_up.sh` refuses while the product runs. README "Run the product", DECISIONS D12.
-- PR #75 (#46, other session): demo (and so the product) now on `meta-llama/Llama-3.2-3B-Instruct` bf16 with the HiPerGator age-4/age-5 3B adapters; selftest peak VRAM 6.20 GiB, 0.2-0.4 s per fine-tuned reply. Verified after merge: guard passes for base + both adapters, 328 Python tests and 45 frontend tests pass, build + `check:dist` OK. PR #76 (open) sets the age labels back to plain month ranges (the model name ended up inside "5 years (...)").
+- PR #75 (#46, other session): demo (and so the product) now on `meta-llama/Llama-3.2-3B-Instruct` bf16 with the HiPerGator age-4/age-5 3B adapters; selftest peak VRAM 6.20 GiB, 0.2-0.4 s per fine-tuned reply. Verified after merge: guard passes for base + both adapters, 328 Python tests and 45 frontend tests pass, build + `check:dist` OK. PR #76 (merged) set the age labels back to plain month ranges (the model name had ended up inside "5 years (...)").
+- PR #79 (#59): `POST /api/feedback` → `{ok, saved}` (rating linked to the exact turn's iteration on either side; memory-only when saving is off); `GET /api/sessions` (own, newest first), `GET /api/sessions/{id}` (both sides by turn, with ratings), `GET /api/sessions/{id}/export?format=txt|json` (`src/product/export.py`). `DemoStore.rate` takes an optional `extra`. 343 tests.
+- PR #80 (#62): `/history` list and read-only `/history/:id` (ChatLog `readOnly`, compare divider, saved ratings), .txt/.json download, "Practice again with this scenario". The mock dev server now passes query strings and file downloads. 59 frontend tests. **v1 product feature set complete in code**; only the live test (#64) is left.
+- PR #78 (#73): `demo_up.sh` checks the demo unit every second while waiting; on a failure, exit or restart it stops the unit, prints the last 30 journal lines and exits non-zero; `reset-failed` before starting. `product_up.sh` unchanged on purpose (the product unit restarts while Mongo comes up).
 
 ## Session 6 (2026-11-18): issue-driven workflow
 - Added `CONTRIBUTING.md`, issue/PR templates, CI (`.github/workflows/tests.yml` + `requirements-ci.txt`, CPU-only; 75 tests pass in a fresh venv), workflow labels, and `.claude/` (agent `issue-worker`; skills `/plan-issues`, `/work-issue`, `/sync-issues`; project permissions). CLAUDE.md §14.
@@ -121,7 +124,7 @@ Task list lives on GitHub; tracking issues #49 (Llama switch) and #18 (done).
 0. **Llama switch (#49):** #41, #42, #45 done → #43 run the chain on HiPerGator (Justin: `git pull`, `submit_all.sh --dry-run`, `--smoke-only`, then full) → #44 collect results + pick demo model + new review packet → #46 demo switch (measure 4-bit VRAM) and #47 docs → #48 Space / HF adapter repo / paper (Justin + Dr. Dever). #40 open for the Research Computing ticket.
 1. Track A (HiPerGator, Qwen era): #8-#12 done; superseded by the Llama switch.
 2. Track B (self-hosted demo): #13-#17, #30, #31, #36 all done.
-2b. **Product frontend (#65):** #54-#56, #58, #60, #61, #63 done → **#59** feedback/history/export API (ready; frontend expects `{ok, saved}` from `/api/feedback`, see its comment) → #62 history view → #64 live test (Justin, can start now).
+2b. **Product frontend (#65):** #54-#56, #58-#63 all done (#57 IRB question still open) → **#64 live test** (Justin).
 3. Still open, not yet issues: Phase 1 ratings → pick run 3 vs 4 (`python -m src.eval.score_ratings --phase phase1`), optional runs 5-6, Phase 1 report. Rebuild the meeting notebook after new results (`python scripts/build_meeting_notebook.py`).
 
 ## Waiting on user
