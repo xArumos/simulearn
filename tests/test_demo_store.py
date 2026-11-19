@@ -1,5 +1,6 @@
 """Demo chat saving (src/demo/store.py) on an in-memory MongoDB, same pattern as backend/tests."""
 import mongomock
+from bson import ObjectId
 
 from src.demo.store import EMPTY_REPLY, DemoStore
 
@@ -54,3 +55,23 @@ def test_save_errors_never_break_the_chat():
     assert store.log_turn("not-an-object-id", "t", "hi", "hi", "m", {}) is None
     conv = store.start("owner-a", 5, ["untrained"])["untrained"]
     assert store.log_turn(conv, "someone-else", "hi", "hi", "m", {}) is None  # owner scoping from the backend
+
+
+def test_feedback_conversation_id_is_an_object_id_that_joins_to_its_conversation():
+    store, db = make_store()
+    conv = store.start("tester-1", 5, ["fine-tuned"])["fine-tuned"]
+    v = store.log_turn(conv, "tester-1", "hi", "hi", "age5", {})
+    assert store.rate(conv, "tester-1", v, "fine-tuned", False, "hi")
+    row = db["feedback"].find_one()
+    assert isinstance(row["conversation_id"], ObjectId)
+    assert db["conversations"].find_one({"_id": row["conversation_id"]})["title"] == "demo age5 fine-tuned"
+    assert db["transcript_iterations"].find_one(
+        {"conversation_id": row["conversation_id"], "version": row["version"]}) is not None
+
+
+def test_rating_with_an_invalid_id_returns_false_and_logs(caplog):
+    store, db = make_store()
+    with caplog.at_level("ERROR", logger="src.demo.store"):
+        assert store.rate("not-an-object-id", "t", 1, "untrained", True, "hi") is False
+    assert "could not save feedback" in caplog.text
+    assert db["feedback"].count_documents({}) == 0
