@@ -9,6 +9,8 @@ import os
 import shutil
 import socket
 import subprocess
+import threading
+import time
 from pathlib import Path
 
 import pytest
@@ -18,7 +20,7 @@ from src.utils.config import PROJECT_ROOT
 UP = PROJECT_ROOT / "scripts" / "demo_up.sh"
 DOWN = PROJECT_ROOT / "scripts" / "demo_down.sh"
 UNITS = ("simulearn-demo", "simulearn-tunnel")
-TOOLS = ("bash", "cat", "date", "dirname", "grep", "id", "sed", "sleep", "tail", "rm", "touch")
+TOOLS = ("bash", "cat", "cp", "date", "dirname", "grep", "id", "sed", "sleep", "tail", "rm", "touch")
 
 pytestmark = pytest.mark.skipif(shutil.which("bash") is None, reason="needs bash")
 
@@ -34,7 +36,14 @@ case "$cmd" in
     [ -e "$STUB_STATE/start-fails" ] && exit 1
     for u in "$@"; do
       [ -e "$STUB_STATE/never-active-$u" ] || touch "$STUB_STATE/active-$u"
+      if [ -e "$STUB_STATE/crash-$u" ]; then cp "$STUB_STATE/crash-$u" "$STUB_STATE/show-$u"; fi
     done ;;
+  show)
+    u="${@: -1}"
+    if [ -e "$STUB_STATE/show-$u" ]; then cat "$STUB_STATE/show-$u"
+    elif [ -e "$STUB_STATE/active-$u" ]; then printf 'NRestarts=0\nActiveState=active\nSubState=running\n'
+    else printf 'NRestarts=0\nActiveState=inactive\nSubState=dead\n'
+    fi ;;
   stop)
     [ -e "$STUB_STATE/stop-fails" ] && exit 1
     for u in "$@"; do rm -f "$STUB_STATE/active-$u"; done ;;
@@ -266,6 +275,59 @@ def test_up_times_out_when_the_demo_never_listens(s):
     out = s.run(UP, DEMO_PORT=str(free_port()), DEMO_UP_WAIT_SECONDS="1")
     assert out.returncode != 0
     assert "after 1 s" in out.stderr and "journalctl --user -u simulearn-demo" in out.stderr
+
+
+@pytest.mark.parametrize("state", [
+    "ActiveState=activating\nSubState=auto-restart\nNRestarts=0",  # crashed, waiting for RestartSec
+    "ActiveState=failed\nSubState=failed\nNRestarts=4",             # gave up (start limit)
+    "ActiveState=active\nSubState=running\nNRestarts=1",            # already restarted once
+    "ActiveState=inactive\nSubState=dead\nNRestarts=0",             # exited
+])
+def test_up_stops_early_when_the_demo_crashes(s, state):
+    """Issue #73: a crash on startup ends the wait at once, with this start's log, not after 600 s."""
+    (s.state / "crash-simulearn-demo").write_text(state + "\n")
+    s.journal("simulearn-demo", "Traceback (most recent call last):\n"
+              "src.demo.policy.ProhibitedModelError: base model not allowed\n")
+    began = time.monotonic()
+    out = s.run(UP, DEMO_PORT=str(free_port()))  # default DEMO_UP_WAIT_SECONDS=600
+    assert time.monotonic() - began < 20
+    assert out.returncode != 0
+    assert "simulearn-demo crashed on startup" in out.stderr
+    assert "ProhibitedModelError" in out.stderr
+    assert "journalctl --user -u simulearn-demo --since" in out.stderr
+    journal_calls = [c for c in s.calls() if c.startswith("journalctl")]
+    assert journal_calls and all("--since" in c for c in journal_calls) and "-n 30" in journal_calls[0]
+    assert "systemctl --user stop simulearn-demo" in s.calls()  # no more restarts holding the GPU
+
+
+def test_up_clears_an_old_failure_before_starting(s, listener):
+    out = s.run(UP, DEMO_PORT=str(listener))
+    assert out.returncode == 0, out.stderr
+    calls = s.calls()
+    assert calls.index("systemctl --user reset-failed simulearn-demo") < \
+        next(i for i, c in enumerate(calls) if c.startswith("systemctl --user start"))
+
+
+def test_up_waits_for_a_slow_but_healthy_model_load(s):
+    """No crash: keep waiting until the demo listens, as before."""
+    port = free_port()
+    sock = socket.socket()
+
+    def listen_later():
+        time.sleep(3)
+        sock.bind(("127.0.0.1", port))
+        sock.listen(8)
+
+    t = threading.Thread(target=listen_later)
+    t.start()
+    try:
+        out = s.run(UP, DEMO_PORT=str(port), DEMO_UP_WAIT_SECONDS="30")
+    finally:
+        t.join()
+        sock.close()
+    assert out.returncode == 0, out.stderr
+    assert "Demo is up" in out.stdout
+    assert "systemctl --user stop simulearn-demo" not in s.calls()
 
 
 def test_up_fails_when_the_tunnel_unit_does_not_come_up(s, listener):

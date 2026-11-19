@@ -111,7 +111,7 @@ bash scripts/demo_down.sh    # after the session: frees the GPU
 
 `demo_down.sh` stops `simulearn-tunnel` **and** `simulearn-demo`, then `docker compose stop` (skip that with `--keep-db`), and prints the GPU memory still in use (`nvidia-smi`). Both scripts are safe to run twice and never print the password or `MONGODB_URI`.
 
-Settings: `DEMO_PORT`, `TUNNEL_CONFIG`, `DEMO_UP_WAIT_SECONDS` (wait for the demo to listen, default 600), `DEMO_UP_TUNNEL_WAIT_SECONDS` (wait for the tunnel unit, the quick URL and the saving line, default 30).
+Settings: `DEMO_PORT`, `TUNNEL_CONFIG`, `DEMO_UP_WAIT_SECONDS` (wait for the demo to listen, default 600; if the demo crashes on startup, `demo_up.sh` stops it, prints the last 30 lines of its log and exits right away), `DEMO_UP_TUNNEL_WAIT_SECONDS` (wait for the tunnel unit, the quick URL and the saving line, default 30).
 
 `demo_up.sh` refuses to start while the product (below) is running: only one GPU app at a time.
 

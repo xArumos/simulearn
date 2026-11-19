@@ -11,7 +11,7 @@
 #
 # Settings (environment variables, all optional):
 #   DEMO_PORT                    default 7860
-#   DEMO_UP_WAIT_SECONDS         wait this long for the demo to listen (model loading), default 600
+#   DEMO_UP_WAIT_SECONDS         wait this long for the demo to listen (model loading), default 600; a crash stops it early
 #   DEMO_UP_TUNNEL_WAIT_SECONDS  then wait this long for the tunnel unit / quick URL / saving line, default 30
 #   TUNNEL_CONFIG                named tunnel config, default scripts/cloudflared/config.yml (git-ignored)
 #   SIMULEARN_ENV_FILE           default <repo>/.env
@@ -80,6 +80,26 @@ systemctl --user is-active --quiet "$DEMO_UNIT" && demo_was_active=1
 systemctl --user is-active --quiet "$TUNNEL_UNIT" && tunnel_was_active=1
 START="$(date '+%Y-%m-%d %H:%M:%S')"
 
+# unit_state UNIT: prints "ACTIVE_STATE SUB_STATE N_RESTARTS" (systemctl show prints properties in its own order).
+unit_state() {
+  local line active="" sub="" restarts=0
+  while IFS= read -r line; do
+    case "$line" in
+      ActiveState=*) active="${line#*=}" ;;
+      SubState=*) sub="${line#*=}" ;;
+      NRestarts=*) restarts="${line#*=}" ;;
+    esac
+  done < <(systemctl --user show -p ActiveState,SubState,NRestarts "$1" 2>/dev/null || true)
+  [[ "$restarts" =~ ^[0-9]+$ ]] || restarts=0
+  echo "${active:-unknown} ${sub:-unknown} $restarts"
+}
+
+# A crash on an earlier run leaves the unit 'failed' and may have used up its start limit; clear that first.
+if [ "$demo_was_active" = 0 ]; then
+  systemctl --user reset-failed "$DEMO_UNIT" >/dev/null 2>&1 || true
+fi
+read -r _ _ restarts_before < <(unit_state "$DEMO_UNIT")
+
 say "starting $DEMO_UNIT and $TUNNEL_UNIT"
 systemctl --user start "$TUNNEL_UNIT" "$DEMO_UNIT" \
   || die "systemctl --user start failed. See: systemctl --user status $DEMO_UNIT $TUNNEL_UNIT"
@@ -87,6 +107,16 @@ systemctl --user start "$TUNNEL_UNIT" "$DEMO_UNIT" \
 say "waiting up to ${WAIT} s for the demo to load the model and listen on 127.0.0.1:${PORT}"
 waited=0
 until demo_listening "$PORT"; do
+  # The unit restarts on failure (RestartSec=15), so a crash shows as 'auto-restart' or a higher NRestarts, not
+  # only as 'failed'. Stop at the first crash and show why, instead of waiting out DEMO_UP_WAIT_SECONDS.
+  read -r active sub restarts < <(unit_state "$DEMO_UNIT")
+  if [ "$active" = failed ] || [ "$active" = inactive ] || [ "$sub" = auto-restart ] \
+     || [ "$restarts" -gt "$restarts_before" ]; then
+    systemctl --user stop "$DEMO_UNIT" >/dev/null 2>&1 || true
+    echo "demo_up.sh: $DEMO_UNIT stopped while loading (state: $active/$sub). Its log since $START:" >&2
+    journalctl --user -u "$DEMO_UNIT" -o cat --no-pager --since "$START" -n 30 >&2 2>/dev/null || true
+    die "$DEMO_UNIT crashed on startup (see the log above). More: journalctl --user -u $DEMO_UNIT --since \"$START\""
+  fi
   if [ "$waited" -ge "$WAIT" ]; then
     die "nothing is listening on 127.0.0.1:${PORT} after ${WAIT} s. Check: journalctl --user -u $DEMO_UNIT -n 50" \
         "(raise DEMO_UP_WAIT_SECONDS if the model is still loading)."
