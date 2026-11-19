@@ -3,6 +3,8 @@
 # On the Space, adapters come from the private adapter repo as <repo>/age<N>/ (see scripts/upload_adapters.sh),
 # and `path` is ignored.
 base_model: Qwen/Qwen2.5-1.5B-Instruct
+load_in_4bit: false         # true = 4-bit NF4 on a local CUDA GPU, for QLoRA-trained models (Llama-3.1-8B, D11).
+                            # Refused on the CPU and on the ZeroGPU Space; false = bf16 on GPU / fp32 on CPU.
 default_age: 5
 context_turns: 6            # same as training (run 3)
 decoding:                   # same as evaluation (CLAUDE.md §9.1)
