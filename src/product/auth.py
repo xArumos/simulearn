@@ -20,7 +20,7 @@ HTTP (an APIRouter the product server mounts with `app.include_router(router)`; 
 
 Failed logins are rate-limited in memory, per client IP and per username (5 failures in 10 minutes by default).
 The limit lives in one process, so it resets on restart. Behind a proxy or tunnel every request can share one
-IP; the per-username limit still holds, and the server should pass the real client IP through if it matters.
+IP; the per-username limit still holds, and behind the tunnel the IP comes from CF-Connecting-IP (see _client_ip).
 """
 from __future__ import annotations
 
@@ -269,8 +269,18 @@ def current_user(request: Request, auth: Auth = Depends(get_auth)) -> dict:
     return {k: v for k, v in user.items() if k != "password_hash"}
 
 
+LOOPBACK = ("127.0.0.1", "::1")
+
+
 def _client_ip(request: Request) -> str:
-    return request.client.host if request.client else "unknown"
+    """The client's IP for the login rate limit. Behind the cloudflared tunnel every request arrives from
+    127.0.0.1, so Cloudflare's CF-Connecting-IP header names the real client; it is trusted only from loopback,
+    because anyone reaching the server directly could send the header themselves."""
+    peer = request.client.host if request.client else "unknown"
+    forwarded = request.headers.get("cf-connecting-ip", "").strip()
+    if peer in LOOPBACK and forwarded:
+        return forwarded[:64]
+    return peer
 
 
 router = APIRouter()
