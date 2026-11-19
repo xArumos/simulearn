@@ -1,0 +1,29 @@
+# systemd USER service: Cloudflare Tunnel in front of the always-on demo (simulearn-demo.service). Optional.
+# Install steps: README.md, "Share the demo with a Cloudflare Tunnel". Edit the two repo paths below if the repo is
+# not at ~/dev/simulearn.
+# Quick mode (the default here) gets a NEW https://...trycloudflare.com URL on every restart; read it with
+#   journalctl --user -u simulearn-tunnel | grep trycloudflare
+# For a fixed hostname, set up a named tunnel and change ExecStart to end in "tunnel.sh named".
+# No secrets here: tunnel.sh checks DEMO_PASSWORD in the repo's .env; named-tunnel credentials stay in ~/.cloudflared.
+
+[Unit]
+Description=SimuLearn demo Cloudflare Tunnel (to 127.0.0.1:7860)
+Wants=simulearn-demo.service network-online.target
+After=simulearn-demo.service network-online.target
+# Give up after 5 failed starts in 10 minutes (e.g. DEMO_PASSWORD missing) instead of looping forever.
+StartLimitIntervalSec=600
+StartLimitBurst=5
+
+[Service]
+Type=simple
+WorkingDirectory=%h/dev/simulearn
+ExecStart=/bin/bash %h/dev/simulearn/scripts/tunnel.sh quick
+# The demo needs a while to load the model; wait for it to listen instead of failing straight away.
+Environment=TUNNEL_WAIT_SECONDS=600
+Restart=on-failure
+RestartSec=15
+TimeoutStartSec=30
+TimeoutStopSec=15
+
+[Install]
+WantedBy=default.target
