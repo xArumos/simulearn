@@ -22,7 +22,7 @@ export function mockApiPlugin(): Plugin {
           } catch {
             body = undefined;
           }
-          const out = api.handle({ method: req.method ?? "GET", path: url.split("?")[0], body, token });
+          const out = api.handle({ method: req.method ?? "GET", path: url, body, token });
           if (out.setCookie) {
             const v = out.setCookie.value;
             res.setHeader(
@@ -33,8 +33,10 @@ export function mockApiPlugin(): Plugin {
             );
           }
           res.statusCode = out.status;
-          res.setHeader("Content-Type", "application/json");
-          res.end(JSON.stringify(out.body ?? null));
+          // A raw `text` answer (an export file) goes out as is, with its own headers (Content-Disposition).
+          const headers = out.text !== undefined ? (out.headers ?? {}) : { "Content-Type": "application/json", ...out.headers };
+          for (const [k, v] of Object.entries(headers)) res.setHeader(k, v);
+          res.end(out.text !== undefined ? out.text : JSON.stringify(out.body ?? null));
         });
       });
     },
