@@ -7,6 +7,13 @@ data/*
 .venv/
 venv/
 .env
+
+# BEGIN local MongoDB (issue #13): secrets and database dumps stay on the machine
+.env.*
+!.env.example
+*.archive.gz
+backups/
+# END local MongoDB (issue #13)
 __pycache__/
 *.py[cod]
 .pytest_cache/

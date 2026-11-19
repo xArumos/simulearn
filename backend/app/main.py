@@ -10,6 +10,8 @@ from pydantic import BaseModel, Field
 from pymongo import ASCENDING, DESCENDING, MongoClient
 from pymongo.errors import DuplicateKeyError
 
+from backend.app.env import load_env_file
+
 
 class TranscriptMessage(BaseModel):
     role: Literal["system", "user", "assistant"]
@@ -199,8 +201,9 @@ def create_app(store: Optional[MongoTranscriptStore] = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         if store is None:
+            load_env_file()  # the repo's .env, if any; shell variables win
             client = MongoClient(
-                os.getenv("MONGODB_URI", "mongodb://localhost:27017"),
+                os.getenv("MONGODB_URI") or "mongodb://127.0.0.1:27017",
                 serverSelectionTimeoutMS=5000,
             )
             client.admin.command("ping")
