@@ -37,3 +37,9 @@ reports/*.log
 
 # Assembled Hugging Face Space folder (scripts/build_space.py)
 build/
+
+# --- HiPerGator (issue #9) ---
+# Real SLURM account/QOS/partition values; commit only scripts/slurm/hpg.env.example
+scripts/slurm/hpg.env
+experiments/*/slurm-*.out
+# --- end HiPerGator ---
