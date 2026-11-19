@@ -1,4 +1,4 @@
-"""Live side-by-side demo: untrained Qwen vs the fine-tuned child model, for the same adult line.
+"""Live side-by-side demo: the untrained base model vs the fine-tuned child model, for the same adult line.
 
     python -m src.demo.chat_demo [--config configs/demo.yaml] [--adapters-dir DIR] [--host 0.0.0.0] [--port 7860]
                                  [--device auto|cpu|cuda] [--require-password] [--selftest]
@@ -136,7 +136,7 @@ def build_ui(demo: Demo, store: DemoStore, reply_both=None):
             age = gr.Dropdown(age_choices, value=default_age, label="Child's age (changing it starts a new conversation)", scale=3)
         with gr.Row(equal_height=True):
             with gr.Column():
-                gr.Markdown("### Untrained Qwen2.5-1.5B")
+                gr.Markdown(f"### Untrained {demo.cfg['base_model'].split('/')[-1]}")
                 base_chat = gr.Chatbot(value=[], height=440, label="Untrained")
             with gr.Column():
                 gr.Markdown("### Fine-tuned on CHILDES (LoRA)")

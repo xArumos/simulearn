@@ -2,7 +2,7 @@
 # Ages whose adapter folder is missing are left out of the age picker, so the demo works before every bucket is trained.
 # On the Space, adapters come from the private adapter repo as <repo>/age<N>/ (see scripts/upload_adapters.sh),
 # and `path` is ignored.
-base_model: Qwen/Qwen2.5-1.5B-Instruct
+base_model: meta-llama/Llama-3.2-3B-Instruct   # D11; Qwen is prohibited (POLICIES.md)
 load_in_4bit: false         # true = 4-bit NF4 on a local CUDA GPU, for QLoRA-trained models (Llama-3.1-8B, D11).
                             # Refused on the CPU and on the ZeroGPU Space; false = bf16 on GPU / fp32 on CPU.
 default_age: 5
@@ -13,11 +13,11 @@ decoding:                   # same as evaluation (CLAUDE.md §9.1)
   max_new_tokens: 60
 adapters:
   4:
-    path: null              # not trained yet (a run was started 2026-11-03 and stopped early; see STATE.md)
-    label: 48-59 months
+    path: experiments/20261119-1127_llama3b_lora_ep1_age4_hpg/adapter
+    label: Llama-3B (48-59 months)
   5:
-    path: experiments/20261016-0003_qwen1.5b_lora_ep1/adapter
-    label: run 3 (60-71 months)
+    path: experiments/20261119-1127_llama3b_lora_ep1_hpg/adapter
+    label: Llama-3B (60-71 months)
   6:
     path: null              # Samaree's age-6 run (age6-bucket branch), not trained yet
     label: age-6 bucket (72-83 months)
